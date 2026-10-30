@@ -1,36 +1,63 @@
 const { Resend } = require("resend");
 
-let resend;
-const client = () => {
-  if (!process.env.RESEND_API_KEY) throw new Error("Email provider is not configured");
-  if (!resend) resend = new Resend(process.env.RESEND_API_KEY);
-  return resend;
+let resendClient;
+
+const getResendClient = () => {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error("Email provider is not configured");
+  }
+
+  if (!resendClient) {
+    resendClient = new Resend(process.env.RESEND_API_KEY);
+  }
+
+  return resendClient;
 };
 
-const sendEmail = async ({ to, subject, html }) => {
-  const { error } = await client().emails.send({
+const sendEmail = async (emailMessage) => {
+  const resend = getResendClient();
+  const { error } = await resend.emails.send({
     from: process.env.EMAIL_FROM,
-    to,
-    subject,
-    html,
+    to: emailMessage.to,
+    subject: emailMessage.subject,
+    html: emailMessage.html,
   });
-  if (error) throw new Error("Email delivery failed");
+
+  if (error) {
+    throw new Error("Email delivery failed");
+  }
 };
 
-const sendVerificationCode = (to, code) => sendEmail({
-  to,
+const createVerificationEmail = (verificationCode) => ({
   subject: "Verify your ECO account",
-  html: `<p>Your verification code is <strong>${code}</strong>.</p><p>It expires in 10 minutes.</p>`,
+  html: `<p>Your verification code is <strong>${verificationCode}</strong>.</p><p>It expires in 10 minutes.</p>`,
 });
 
-const sendPasswordReset = (to, token) => {
-  const url = new URL(process.env.PASSWORD_RESET_URL);
-  url.searchParams.set("token", token);
-  return sendEmail({
-    to,
-    subject: "Reset your ECO password",
-    html: `<p><a href="${url.toString()}">Reset your password</a></p><p>This link expires in 30 minutes and can only be used once.</p>`,
+const createPasswordResetEmail = (resetUrl) => ({
+  subject: "Reset your ECO password",
+  html: `<p><a href="${resetUrl}">Reset your password</a></p><p>This link expires in 30 minutes and can only be used once.</p>`,
+});
+
+const sendVerificationCode = async (recipientEmail, verificationCode) => {
+  const verificationEmail = createVerificationEmail(verificationCode);
+  await sendEmail({
+    to: recipientEmail,
+    ...verificationEmail,
   });
 };
 
-module.exports = { sendVerificationCode, sendPasswordReset };
+const sendPasswordReset = async (recipientEmail, resetToken) => {
+  const resetUrl = new URL(process.env.PASSWORD_RESET_URL);
+  resetUrl.searchParams.set("token", resetToken);
+
+  const resetEmail = createPasswordResetEmail(resetUrl.toString());
+  await sendEmail({
+    to: recipientEmail,
+    ...resetEmail,
+  });
+};
+
+module.exports = {
+  sendVerificationCode,
+  sendPasswordReset,
+};

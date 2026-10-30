@@ -1,1 +1,6 @@
-module.exports = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
+const asyncHandler = (handler) => (req, res, next) => {
+  const handlerPromise = Promise.resolve(handler(req, res, next));
+  return handlerPromise.catch(next);
+};
+
+module.exports = asyncHandler;
