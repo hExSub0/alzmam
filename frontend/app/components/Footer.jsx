@@ -52,8 +52,8 @@ export default function Footer({ className = "mt-16" }) {
         </div>
       </div>
 
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 py-5 text-center text-sm text-gray-400 sm:flex-row">
-        <p>جميع الحقوق محفوظة © <CurrentYear /> شركة الزمام للدعاية والإعلان</p>
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-5 text-center text-sm text-gray-400 sm:flex-row sm:px-6">
+        <p className="break-words">جميع الحقوق محفوظة © <CurrentYear /> شركة الزمام للدعاية والإعلان</p>
         <a href="https://alzmam-adv.com/ar" className="transition-colors hover:text-white">
           alzmam-adv.com
         </a>

@@ -103,7 +103,7 @@ export default function LatestProducts() {
           className="!overflow-hidden"
         >
           {products.map((product) => (
-            <SwiperSlide key={product.id} className="!h-auto !w-[230px] sm:!w-[245px]">
+            <SwiperSlide key={product.id} className="!h-auto !w-[min(82vw,230px)] sm:!w-[245px]">
               <ProductCard product={product} />
             </SwiperSlide>
           ))}

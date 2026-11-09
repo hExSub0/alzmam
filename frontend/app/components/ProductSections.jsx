@@ -71,7 +71,7 @@ export default function ProductSections() {
           slidesPerView="auto"
           spaceBetween={16}
           className="!overflow-hidden"
-        >{sectionProducts.map((product) => <SwiperSlide key={product.id} className="!h-auto !w-[230px] sm:!w-[245px]"><ProductCard product={product} /></SwiperSlide>)}</Swiper> : <p className="rounded-lg border border-dashed border-gray-200 bg-white px-4 py-8 text-center text-sm text-gray-400">لا توجد منتجات في هذا القسم بعد.</p>}
+        >{sectionProducts.map((product) => <SwiperSlide key={product.id} className="!h-auto !w-[min(82vw,230px)] sm:!w-[245px]"><ProductCard product={product} /></SwiperSlide>)}</Swiper> : <p className="rounded-lg border border-dashed border-gray-200 bg-white px-4 py-8 text-center text-sm text-gray-400">لا توجد منتجات في هذا القسم بعد.</p>}
       </section>;
     })}
     </div>

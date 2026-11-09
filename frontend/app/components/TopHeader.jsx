@@ -72,8 +72,8 @@ export default function TopHeader() {
   return (
     <>
       <div className="h-12 w-full bg-[#1D1F1F] text-gray-300">
-        <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between gap-6 px-4">
-          <div className="flex shrink-0 items-center gap-4 text-sm">
+        <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-4">
+          <div className="hidden shrink-0 items-center gap-4 text-sm md:flex">
             <a href="#" className="text-gray-200 transition-colors hover:text-white">من نحن</a>
             <span aria-hidden="true" className="h-4 w-px bg-white/15" />
             <a href="#" className="text-gray-200 transition-colors hover:text-white">سياسة الخصوصية</a>
@@ -81,14 +81,14 @@ export default function TopHeader() {
             <a href="#" className="text-gray-200 transition-colors hover:text-white">الشروط والأحكام</a>
           </div>
 
-          <button type="button" onClick={() => setIsSearchOpen(true)} className="w-[min(38vw,44rem)] shrink-0 text-right">
+          <button type="button" onClick={() => setIsSearchOpen(true)} className="min-w-0 flex-1 text-right sm:max-w-72 md:max-w-80">
             <span className="relative flex items-center">
               <Search size={14} className="pointer-events-none absolute right-3 top-1/2 z-10 -translate-y-1/2 text-gray-400" />
               <span dir="rtl" className="flex h-9 w-full items-center rounded-full bg-[#303232] pr-[35px] pl-3 text-xs text-gray-400 transition-colors hover:bg-[#3a3c3c]">{searchQuery || "ابحث"}</span>
             </span>
           </button>
 
-          <a href="mailto:alzmam@alzmam-adv.com" dir="ltr" className="shrink-0 text-xs text-gray-200 transition-colors hover:text-white">
+          <a href="mailto:alzmam@alzmam-adv.com" dir="ltr" className="hidden shrink-0 text-xs text-gray-200 transition-colors hover:text-white lg:block">
             alzmam@alzmam-adv.com
           </a>
         </div>

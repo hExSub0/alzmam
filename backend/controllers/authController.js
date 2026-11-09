@@ -445,20 +445,37 @@ const resetPassword = async (req, res) => {
   const { token, password } = req.body;
   const currentTime = new Date();
   const resetTokenHash = hashToken(token);
-  const user = await User.findOne({
+  const tokenIsValid = await User.exists({
     passwordResetHash: resetTokenHash,
     passwordResetExpiresAt: { $gt: currentTime },
   });
 
-  if (!user) {
+  if (!tokenIsValid) {
     throw new AppError(400, "رابط إعادة تعيين كلمة المرور غير صحيح أو انتهت صلاحيته.", "INVALID_RESET_TOKEN");
   }
 
-  user.password = await hashPassword(password);
-  user.passwordChangedAt = new Date();
-  user.passwordResetHash = undefined;
-  user.passwordResetExpiresAt = undefined;
-  await user.save();
+  const hashedPassword = await hashPassword(password);
+  const user = await User.findOneAndUpdate(
+    {
+      passwordResetHash: resetTokenHash,
+      passwordResetExpiresAt: { $gt: currentTime },
+    },
+    {
+      $set: {
+        password: hashedPassword,
+        passwordChangedAt: currentTime,
+      },
+      $unset: {
+        passwordResetHash: 1,
+        passwordResetExpiresAt: 1,
+      },
+    },
+    { new: true, runValidators: true },
+  );
+
+  if (!user) {
+    throw new AppError(400, "رابط إعادة تعيين كلمة المرور غير صحيح أو انتهت صلاحيته.", "INVALID_RESET_TOKEN");
+  }
 
   await revokeUserSessions(user._id);
 

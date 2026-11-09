@@ -36,7 +36,7 @@ export default function AccountLayout({ activeSection, title, children }) {
       <TopHeader />
       <Header />
 
-      <section className="h-44 border-b border-gray-200 bg-[#F9FAFB]">
+      <section className="h-32 border-b border-gray-200 bg-[#F9FAFB] sm:h-44">
         <div className="mx-auto flex h-full max-w-7xl items-start justify-end px-4 pt-7 text-sm text-gray-500 sm:px-6">
           <nav aria-label="مسار التنقل" className="flex items-center gap-2">
             <Link href="/" className="transition-colors hover:text-black">الرئيسية</Link>
@@ -48,7 +48,7 @@ export default function AccountLayout({ activeSection, title, children }) {
         </div>
       </section>
 
-      <main className="relative mx-auto -mt-24 grid w-full max-w-7xl flex-1 content-start gap-6 px-4 pb-12 sm:px-6 lg:grid-cols-[288px_minmax(0,1fr)] lg:gap-8" dir="rtl">
+      <main className="relative mx-auto -mt-16 grid w-full max-w-7xl flex-1 content-start gap-4 px-3 pb-10 sm:-mt-24 sm:gap-6 sm:px-6 sm:pb-12 lg:grid-cols-[288px_minmax(0,1fr)] lg:gap-8" dir="rtl">
         <aside aria-label="قائمة الحساب" className="h-fit rounded-xl border border-gray-100 bg-white p-3 shadow-[0_12px_35px_rgba(0,0,0,0.06)] lg:sticky lg:top-6 lg:self-start lg:p-5">
           <nav className="flex gap-1 overflow-x-auto lg:flex-col lg:gap-1 lg:overflow-visible">
             {ACCOUNT_LINKS.map(({ id, label, href, icon: Icon }) => {
@@ -85,7 +85,7 @@ export default function AccountLayout({ activeSection, title, children }) {
           </nav>
         </aside>
 
-        <section className="min-h-[390px] rounded-xl border border-gray-100 bg-white p-5 shadow-[0_12px_35px_rgba(0,0,0,0.04)] sm:p-7">
+        <section className="min-h-[320px] min-w-0 rounded-xl border border-gray-100 bg-white p-4 shadow-[0_12px_35px_rgba(0,0,0,0.04)] sm:min-h-[390px] sm:p-7">
           <h1 className="mb-6 text-xl font-bold text-[#1D1F1F]">{title}</h1>
           {!isReady ? (
             <p className="py-16 text-center text-sm text-gray-500">جارٍ التحميل…</p>

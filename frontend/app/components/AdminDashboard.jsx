@@ -553,7 +553,7 @@ export default function AdminDashboard() {
                 </li>)}</ul> : <div className="px-5 py-10 text-center"><Bell size={23} className="mx-auto text-gray-300" /><p className="mt-2 text-xs font-semibold text-gray-600">لا توجد إشعارات جديدة</p><p className="mt-1 text-[11px] text-gray-400">ستظهر الطلبات الجديدة هنا فور وصولها.</p></div>}
               </section>}
             </div>
-            <button type="button" onClick={toggleNotificationSound} aria-label={soundEnabled ? "إيقاف صوت إشعارات الطلبات" : "تفعيل صوت إشعارات الطلبات"} title={soundEnabled ? "إيقاف صوت الإشعارات" : "تفعيل صوت الإشعارات"} className={`grid h-10 w-10 cursor-pointer place-items-center rounded-xl transition-colors hover:bg-white/10 ${soundEnabled ? "text-white/75 hover:text-white" : "text-amber-300"}`}>{soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>
+            <button type="button" onClick={toggleNotificationSound} aria-label={soundEnabled ? "إيقاف صوت إشعارات الطلبات" : "تفعيل صوت إشعارات الطلبات"} title={soundEnabled ? "إيقاف صوت الإشعارات" : "تفعيل صوت الإشعارات"} className={`hidden h-10 w-10 cursor-pointer place-items-center rounded-xl transition-colors hover:bg-white/10 sm:grid ${soundEnabled ? "text-white/75 hover:text-white" : "text-amber-300"}`}>{soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>
             <div className="hidden text-left sm:block">
               <p className="text-sm font-semibold">{user.name}</p>
               <p className="mt-0.5 text-xs text-white/55" dir="ltr">{user.email}</p>

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, ChevronDown, Heart, LayoutDashboard, LogOut, Package, ShoppingCart, User } from "lucide-react";
+import { Bell, ChevronDown, Heart, LayoutDashboard, LogOut, Menu, Package, ShoppingCart, User, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "./CartProvider";
 import { AnimatePresence, motion } from "framer-motion";
@@ -33,13 +33,14 @@ function AccountAvatar() {
 export default function Header() {
   const [openMenu, setOpenMenu] = useState(null);
   const [authMode, setAuthMode] = useState(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef(null);
   const { itemCount } = useCart();
   const { user, logout } = useAuth();
 
   useEffect(() => {
-    if (!isAccountMenuOpen) return undefined;
+    if (!isAccountMenuOpen && !isMobileMenuOpen) return undefined;
 
     const closeMenuOnOutsideClick = (event) => {
       if (!accountMenuRef.current?.contains(event.target)) {
@@ -47,23 +48,26 @@ export default function Header() {
       }
     };
     const closeMenuOnEscape = (event) => {
-      if (event.key === "Escape") setIsAccountMenuOpen(false);
+      if (event.key === "Escape") {
+        setIsAccountMenuOpen(false);
+        setIsMobileMenuOpen(false);
+      }
     };
 
-    document.addEventListener("pointerdown", closeMenuOnOutsideClick);
+    if (isAccountMenuOpen) document.addEventListener("pointerdown", closeMenuOnOutsideClick);
     document.addEventListener("keydown", closeMenuOnEscape);
 
     return () => {
       document.removeEventListener("pointerdown", closeMenuOnOutsideClick);
       document.removeEventListener("keydown", closeMenuOnEscape);
     };
-  }, [isAccountMenuOpen]);
+  }, [isAccountMenuOpen, isMobileMenuOpen]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
-      <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-20 gap-4">
+      <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-3 sm:px-4 lg:h-20 lg:gap-4">
 
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
           {/* ── اليمين: اللوجو ── */}
           <div className="shrink-0">
             <Link href="/">
@@ -72,14 +76,14 @@ export default function Header() {
                 alt="Logo"
                 width={64}
                 height={48}
-                className="h-9 w-auto object-contain"
+                className="h-8 w-auto object-contain sm:h-9"
                 priority
               />
             </Link>
           </div>
 
           {/* ── القائمة بجانب اللوجو ── */}
-          <nav className="hidden lg:flex items-center gap-0">
+          <nav aria-label="التنقل الرئيسي" className="hidden lg:flex items-center gap-0">
           {NAV_ITEMS.map((item) => (
             <div
               key={item.label}
@@ -117,7 +121,7 @@ export default function Header() {
         </div>
 
         {/* ── اليسار: الأيقونات ── */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
           {user ? (
             <div ref={accountMenuRef} className="relative">
               <button
@@ -209,9 +213,55 @@ export default function Header() {
             )}
           </Link>
 
+          <button
+            type="button"
+            aria-label={isMobileMenuOpen ? "إغلاق القائمة" : "فتح القائمة"}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="mobile-navigation"
+            onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
+            className="grid h-10 w-10 cursor-pointer place-items-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-950 lg:hidden"
+          >
+            {isMobileMenuOpen ? <X size={21} /> : <Menu size={21} />}
+          </button>
+
         </div>
 
       </div>
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.nav
+            id="mobile-navigation"
+            aria-label="قائمة التنقل"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-gray-100 bg-white px-4 pb-5 pt-3 shadow-xl lg:hidden"
+            dir="rtl"
+          >
+            <div className="grid grid-cols-2 gap-2 border-b border-gray-100 pb-4">
+              <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg bg-gray-50 px-3 py-3 text-sm font-semibold text-gray-800">الرئيسية</Link>
+              <Link href="/products" onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg bg-gray-50 px-3 py-3 text-sm font-semibold text-gray-800">كل المنتجات</Link>
+              {user && <Link href="/account/profile" onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg bg-gray-50 px-3 py-3 text-sm font-semibold text-gray-800">حسابي</Link>}
+              <Link href="/cart" onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg bg-gray-50 px-3 py-3 text-sm font-semibold text-gray-800">سلة التسوق ({itemCount})</Link>
+            </div>
+            <p className="px-1 pb-2 pt-4 text-xs font-semibold text-gray-400">تصفح الأقسام</p>
+            <div className="divide-y divide-gray-100">
+              {NAV_ITEMS.map((item) => (
+                <Link key={item.label} href={item.href} onClick={() => setIsMobileMenuOpen(false)} className="flex min-h-12 items-center justify-between gap-3 py-3 text-sm text-gray-700 hover:text-black">
+                  <span>{item.label}</span>
+                  {item.hasDropdown && <ChevronDown size={15} className="shrink-0 text-gray-400" />}
+                </Link>
+              ))}
+            </div>
+            {!user && (
+              <button type="button" onClick={() => { setIsMobileMenuOpen(false); setAuthMode("login"); }} className="mt-4 min-h-11 w-full rounded-lg bg-[#1D1F1F] px-4 text-sm font-semibold text-white">
+                تسجيل الدخول
+              </button>
+            )}
+          </motion.nav>
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {authMode && (
           <AuthPage

@@ -26,7 +26,7 @@ export default function Banner() {
   }, []);
 
   return (
-    <section aria-label="عروض الزمام" className="mx-auto w-[75%] max-w-[1200px] py-4">
+    <section aria-label="عروض الزمام" className="mx-auto w-[94%] max-w-[1200px] py-3 sm:w-[88%] sm:py-4 lg:w-[75%]">
       {isMounted && banners.length > 0 && <Swiper
         dir="rtl"
         modules={[Autoplay]}

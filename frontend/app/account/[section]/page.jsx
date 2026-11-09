@@ -1,9 +1,9 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AlertTriangle, Bell, Heart, Package, Trash2, User, X } from "lucide-react";
-import { useState } from "react";
+import { Suspense, use, useState } from "react";
 import AccountLayout from "../../components/AccountLayout";
 import FavoritesPanel from "../../components/FavoritesPanel";
 import OrdersPanel from "../../components/OrdersPanel";
@@ -173,14 +173,21 @@ function AccountSectionContent({ section, sectionId }) {
   );
 }
 
-export default function AccountSectionPage() {
-  const params = useParams();
-  const sectionId = params.section;
+function AccountSectionPageContent({ params }) {
+  const { section: sectionId } = use(params);
   const section = ACCOUNT_SECTIONS[sectionId] || ACCOUNT_SECTIONS.profile;
 
   return (
     <AccountLayout activeSection={sectionId} title={section.title}>
       <AccountSectionContent section={section} sectionId={sectionId} />
     </AccountLayout>
+  );
+}
+
+export default function AccountSectionPage({ params }) {
+  return (
+    <Suspense fallback={null}>
+      <AccountSectionPageContent params={params} />
+    </Suspense>
   );
 }
