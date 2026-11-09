@@ -5,7 +5,9 @@ const REFRESH_COOKIE_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
 const createCookieOptions = (path, httpOnly = true) => ({
   httpOnly,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "strict",
+  // The Vercel frontend and Railway API use different sites in production.
+  // Cross-site fetches need SameSite=None, which browsers require to be Secure.
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
   path,
 });
 

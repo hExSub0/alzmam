@@ -63,3 +63,16 @@ body {
   font-family: "Amazon Ember Arabic", "Amazon Ember", var(--font-inter), sans-serif;
   min-height: 100vh;
 }
+
+@media (max-width: 1023px) {
+  *,
+  *::before,
+  *::after {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+  }
+}

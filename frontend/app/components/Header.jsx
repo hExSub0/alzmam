@@ -236,16 +236,10 @@ export default function Header() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-gray-100 bg-white px-4 pb-5 pt-3 shadow-xl lg:hidden"
+            className="absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden border-t border-gray-100 bg-white px-4 pb-5 pt-3 shadow-xl lg:hidden"
             dir="rtl"
           >
-            <div className="grid grid-cols-2 gap-2 border-b border-gray-100 pb-4">
-              <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg bg-gray-50 px-3 py-3 text-sm font-semibold text-gray-800">الرئيسية</Link>
-              <Link href="/products" onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg bg-gray-50 px-3 py-3 text-sm font-semibold text-gray-800">كل المنتجات</Link>
-              {user && <Link href="/account/profile" onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg bg-gray-50 px-3 py-3 text-sm font-semibold text-gray-800">حسابي</Link>}
-              <Link href="/cart" onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg bg-gray-50 px-3 py-3 text-sm font-semibold text-gray-800">سلة التسوق ({itemCount})</Link>
-            </div>
-            <p className="px-1 pb-2 pt-4 text-xs font-semibold text-gray-400">تصفح الأقسام</p>
+            <p className="px-1 pb-2 text-xs font-semibold text-gray-400">تصفح الأقسام</p>
             <div className="divide-y divide-gray-100">
               {NAV_ITEMS.map((item) => (
                 <Link key={item.label} href={item.href} onClick={() => setIsMobileMenuOpen(false)} className="flex min-h-12 items-center justify-between gap-3 py-3 text-sm text-gray-700 hover:text-black">
@@ -254,11 +248,6 @@ export default function Header() {
                 </Link>
               ))}
             </div>
-            {!user && (
-              <button type="button" onClick={() => { setIsMobileMenuOpen(false); setAuthMode("login"); }} className="mt-4 min-h-11 w-full rounded-lg bg-[#1D1F1F] px-4 text-sm font-semibold text-white">
-                تسجيل الدخول
-              </button>
-            )}
           </motion.nav>
         )}
       </AnimatePresence>
