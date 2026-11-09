@@ -4,22 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCart } from "./CartProvider";
+import { useAuth } from "./AuthProvider";
+import { useFavorites } from "./FavoritesProvider";
+import { getProductPrice, getProductStartingPrice } from "../lib/productApi";
 import {
-  Check, ChevronDown, ChevronLeft, ChevronRight, Heart, Link2, MessageSquare,
-  Minus, Plus, Share2, ShoppingCart, Upload,
+  Check, ChevronDown, ChevronLeft, ChevronRight, FileText, Heart, Link2, LoaderCircle, MessageSquare,
+  Minus, Plus, Share2, ShoppingCart, Trash2,
 } from "lucide-react";
 
 function PriceText({ price }) {
-  const match = price.match(/^(.*?)([٠-٩0-9][٠-٩0-9.,٬٫]*)(\s*(?:ر\.س|ريال(?: سعودي)?))?$/u);
-
-  if (!match) return price;
-
-  return (
-    <>
-      <span>{match[1]}</span>
-      <span className="text-green-700">{match[2]}{match[3]}</span>
-    </>
-  );
+  return <span className="text-green-700">{new Intl.NumberFormat("ar-SA", { maximumFractionDigits: 2 }).format(Number(price))} ر.س</span>;
 }
 
 function HandmadeSelect({ option, value, isOpen, onToggle, onSelect }) {
@@ -47,7 +41,7 @@ function HandmadeSelect({ option, value, isOpen, onToggle, onSelect }) {
             transition={{ duration: 0.16, ease: "easeOut" }}
             className="absolute right-0 top-full z-30 mt-2 w-full origin-top overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
           >
-            {option.values.map((choice) => (
+            {option.values.map((choice, choiceIndex) => (
               <button
                 key={choice}
                 type="button"
@@ -56,7 +50,13 @@ function HandmadeSelect({ option, value, isOpen, onToggle, onSelect }) {
                 onClick={() => onSelect(choice)}
                 className={`block w-full cursor-pointer px-3 py-2 text-right text-sm transition-colors hover:bg-gray-100 ${value === choice ? "font-semibold text-gray-950" : "text-gray-700"}`}
               >
-                {choice}
+                <span>{choice}</span>
+                {(option.valuePricingModes?.[choiceIndex] || option.pricingMode) !== "none" && (
+                  <span className="text-xs text-gray-500">
+                    {(option.valuePricingModes?.[choiceIndex] || option.pricingMode) === "fixed" ? "السعر النهائي: " : "+ "}
+                    {new Intl.NumberFormat("ar-SA").format(option.valuePrices?.[choiceIndex] || 0)} ر.س
+                  </span>
+                )}
               </button>
             ))}
           </motion.div>
@@ -69,9 +69,14 @@ function HandmadeSelect({ option, value, isOpen, onToggle, onSelect }) {
 export default function ProductDetails({ product }) {
   const router = useRouter();
   const { addItem } = useCart();
+  const { user, request } = useAuth();
+  const { favoriteIds, pendingProductIds, toggleFavorite } = useFavorites();
+  const isFavorite = favoriteIds.has(product.id);
   const [quantity, setQuantity] = useState(1);
-  const [attachment, setAttachment] = useState("");
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [attachments, setAttachments] = useState([]);
+  const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
+  const [attachmentError, setAttachmentError] = useState("");
+  const [note, setNote] = useState("");
   const [copied, setCopied] = useState(false);
   const [added, setAdded] = useState(false);
   const [showNote, setShowNote] = useState(false);
@@ -79,8 +84,15 @@ export default function ProductDetails({ product }) {
   const [openOption, setOpenOption] = useState(null);
   const [selectedOptions, setSelectedOptions] = useState({});
   const [optionsError, setOptionsError] = useState(false);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const copiedTimeout = useRef(null);
-  const gallery = product.gallery?.length ? product.gallery : Array(4).fill(product.image);
+  const gallery = product.gallery?.length ? product.gallery : [product.image].filter(Boolean);
+  const description = product.description || "";
+  const shouldShowReadMore = description.length > 200;
+  const visibleDescription = shouldShowReadMore && !isDescriptionExpanded
+    ? description.slice(0, 200)
+    : description;
+  const selectedPrice = getProductPrice(product, selectedOptions);
   const selectImage = (step) => setActiveImage((index) => (index + step + gallery.length) % gallery.length);
 
   useEffect(() => () => window.clearTimeout(copiedTimeout.current), []);
@@ -93,13 +105,36 @@ export default function ProductDetails({ product }) {
   };
 
   const addSelectedProduct = () => {
+    if (isUploadingAttachments) return false;
     if (product.options?.some((option) => !selectedOptions[option.label])) {
       setOptionsError(true);
       return false;
     }
-    addItem(product, quantity, selectedOptions);
+    addItem(product, quantity, selectedOptions, selectedPrice, { note, attachments });
     setAdded(true);
     return true;
+  };
+
+  const uploadAttachments = async (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = "";
+    if (!files.length) return;
+    if (attachments.length + files.length > 5) {
+      setAttachmentError("يمكن إرفاق 5 ملفات كحد أقصى.");
+      return;
+    }
+    const formData = new FormData();
+    files.forEach((file) => formData.append("files", file));
+    setIsUploadingAttachments(true);
+    setAttachmentError("");
+    try {
+      const response = await request("/orders/attachments", { method: "POST", body: formData, auth: false });
+      setAttachments((current) => [...current, ...(response.attachments || [])]);
+    } catch (error) {
+      setAttachmentError(error.message || "تعذر رفع المرفقات. حاول مرة أخرى.");
+    } finally {
+      setIsUploadingAttachments(false);
+    }
   };
 
   return (
@@ -117,11 +152,12 @@ export default function ProductDetails({ product }) {
           <h1 id="product-title" className="text-2xl font-bold leading-relaxed text-[#252b35] sm:text-[28px]">
             {product.name}
           </h1>
-          <p className="mt-4 text-xl font-bold text-[#202124]"><PriceText price={product.price} /></p>
+          <p className="mt-4 text-xl font-bold text-[#202124]">{product.options?.length > 0 && <span className="ml-1 text-sm font-medium text-gray-500">يبدأ من</span>}<PriceText price={getProductStartingPrice(product)} /></p>
 
           <div className="mt-7 space-y-3 text-sm leading-7 text-gray-800">
-            {product.description.split("\n").filter(Boolean).map((line) => <p key={line}>{line}</p>)}
-            <div>
+            {visibleDescription.split("\n").filter(Boolean).map((line) => <p key={line}>{line}</p>)}
+            {shouldShowReadMore && !isDescriptionExpanded && <span>…</span>}
+            {product.specs?.length > 0 && <div>
               <h2 className="mb-2 font-bold">المواصفات:</h2>
               <ul className="space-y-1.5">
                 {product.specs.map((spec) => (
@@ -131,25 +167,26 @@ export default function ProductDetails({ product }) {
                   </li>
                 ))}
               </ul>
-            </div>
+            </div>}
           </div>
 
-          <button type="button" className="mt-3 cursor-pointer text-sm text-blue-600 hover:text-blue-800">
-            اقرأ المزيد
-          </button>
-          <div className="mt-5 flex flex-wrap gap-x-3 gap-y-1 text-xs leading-6 text-gray-500">
-            {[product.name, "درع فاخر", "هدية تكريمية", "دروع كريستال"].map((tag) => (
-              <span key={tag} className="underline decoration-gray-300 underline-offset-2">{tag}</span>
-            ))}
-          </div>
-
+          {shouldShowReadMore && (
+            <button
+              type="button"
+              onClick={() => setIsDescriptionExpanded((expanded) => !expanded)}
+              className="mt-3 cursor-pointer text-sm text-blue-600 hover:text-blue-800"
+            >
+              {isDescriptionExpanded ? "\u0639\u0631\u0636 \u0623\u0642\u0644" : "\u0627\u0642\u0631\u0623 \u0627\u0644\u0645\u0632\u064a\u062f"}
+            </button>
+          )}
           <div className="mt-4 flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setIsFavorite((value) => !value)}
-              aria-label={isFavorite ? "إزالة من المفضلة" : "أضف إلى المفضلة"}
+              disabled={pendingProductIds.has(product.id)}
+              onClick={() => user ? toggleFavorite(product) : router.push("/login")}
+              aria-label={isFavorite ? "إزالة من قائمة الأمنيات" : "أضف إلى قائمة الأمنيات"}
               aria-pressed={isFavorite}
-              className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-gray-300 transition-colors hover:bg-gray-100 ${isFavorite ? "text-red-600" : "text-gray-600"}`}
+              className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-gray-300 transition-colors hover:bg-gray-100 disabled:cursor-wait disabled:opacity-60 ${isFavorite ? "text-red-600" : "text-gray-600"}`}
             >
               <Heart size={18} fill={isFavorite ? "currentColor" : "none"} />
             </button>
@@ -167,11 +204,11 @@ export default function ProductDetails({ product }) {
                   <motion.span
                     role="status"
                     dir="ltr"
-                    initial={{ opacity: 0, y: 5, scale: 0.92 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 3, scale: 0.95 }}
-                    transition={{ duration: 0.18, ease: "easeOut" }}
-                    className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs font-medium text-white shadow-lg"
+                    initial={{ opacity: 0, y: 8, scale: 0.9, x: "-50%" }}
+                    animate={{ opacity: 1, y: 0, scale: 1, x: "-50%" }}
+                    exit={{ opacity: 0, y: 4, scale: 0.94, x: "-50%" }}
+                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                    className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs font-medium text-white shadow-lg"
                   >
                     Copied!
                     <span aria-hidden="true" className="absolute left-1/2 top-full -translate-x-1/2 border-x-[6px] border-t-[6px] border-x-transparent border-t-gray-900" />
@@ -209,23 +246,26 @@ export default function ProductDetails({ product }) {
           <section className="mt-5 rounded-xl bg-white p-5 sm:p-6" aria-labelledby="attachments-title">
             <h2 id="attachments-title" className="mb-4 text-sm font-bold text-gray-700">المرفقات</h2>
             <div className="grid w-full grid-cols-2 gap-3">
-              <label htmlFor="product-attachment" className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[#1D1F1F] bg-[#1D1F1F] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#343838]">
-                <Link2 size={16} className="text-gray-300" />
-                {attachment || "إرفاق ملف"}
+              <label htmlFor="product-attachment" className={`inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#1D1F1F] bg-[#1D1F1F] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#343838] ${isUploadingAttachments ? "cursor-wait opacity-70" : "cursor-pointer"}`}>
+                {isUploadingAttachments ? <LoaderCircle size={16} className="animate-spin text-gray-300" /> : <Link2 size={16} className="text-gray-300" />}
+                {isUploadingAttachments ? "جارٍ رفع المرفقات…" : attachments.length ? `المرفقات (${attachments.length}/5)` : "إرفاق ملف"}
               </label>
-              <input id="product-attachment" type="file" className="sr-only" onChange={(event) => setAttachment(event.target.files?.[0]?.name || "")} />
+              <input id="product-attachment" type="file" multiple accept="image/jpeg,image/png,image/webp,image/avif,application/pdf" disabled={isUploadingAttachments} className="sr-only" onChange={uploadAttachments} />
               <button type="button" onClick={() => setShowNote((value) => !value)} className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[#1D1F1F] bg-[#1D1F1F] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#343838]">
                 <MessageSquare size={16} className="text-gray-300" />
                 إضافة ملاحظة
               </button>
             </div>
-            {showNote && <textarea rows={3} placeholder="اكتب ملاحظتك هنا" className="mt-4 min-h-[100px] w-full resize-y rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-gray-400 focus:ring-1 focus:ring-gray-200" />}
+            <p className="mt-2 text-[10px] text-gray-400">حتى 5 ملفات؛ صور أو PDF، بحد أقصى 5 ميجابايت للملف.</p>
+            {showNote && <textarea rows={3} maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} placeholder="اكتب ملاحظتك هنا" className="mt-4 min-h-[100px] w-full resize-y rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-gray-400 focus:ring-1 focus:ring-gray-200" />}
+            {attachmentError && <p role="alert" className="mt-3 text-xs font-medium text-red-600">{attachmentError}</p>}
+            {attachments.length > 0 && <ul className="mt-3 space-y-2">{attachments.map((file) => <li key={file.url} className="flex min-w-0 items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600"><FileText size={15} className="shrink-0 text-gray-400" /><span className="min-w-0 flex-1 truncate">{file.name}</span><button type="button" onClick={() => setAttachments((current) => current.filter((item) => item.url !== file.url))} aria-label={`حذف المرفق ${file.name}`} className="grid h-7 w-7 shrink-0 cursor-pointer place-items-center rounded-md text-gray-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={14} /></button></li>)}</ul>}
           </section>
 
           <section className="mt-5 rounded-xl bg-white p-5 sm:p-6" aria-label="السعر والشراء">
             <div className="flex items-center justify-between gap-3 text-sm">
               <span className="font-bold text-gray-700">السعر</span>
-              <span className="text-lg font-extrabold text-[#202124]"><PriceText price={product.price} /></span>
+              <span className="text-lg font-extrabold text-[#202124]"><PriceText price={selectedPrice} /></span>
             </div>
             <div className="mt-5 flex items-center justify-between gap-3 text-sm">
               <span className="font-bold text-gray-700">الكمية</span>
@@ -236,8 +276,8 @@ export default function ProductDetails({ product }) {
               </div>
             </div>
             <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <button type="button" onClick={() => { if (addSelectedProduct()) router.push("/cart"); }} className="min-h-11 cursor-pointer rounded-full border border-[#1D1F1F] px-4 py-2 text-sm font-bold text-[#1D1F1F] transition-colors hover:bg-[#1D1F1F]/10">اشتر الآن</button>
-              <button type="button" onClick={addSelectedProduct} className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border border-[#1D1F1F] bg-[#1D1F1F] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#343838]">
+              <button type="button" disabled={isUploadingAttachments} onClick={() => { if (addSelectedProduct()) router.push("/cart"); }} className="min-h-11 cursor-pointer rounded-full border border-[#1D1F1F] px-4 py-2 text-sm font-bold text-[#1D1F1F] transition-colors hover:bg-[#1D1F1F]/10 disabled:cursor-wait disabled:opacity-60">اشتر الآن</button>
+              <button type="button" disabled={isUploadingAttachments} onClick={addSelectedProduct} className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border border-[#1D1F1F] bg-[#1D1F1F] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#343838] disabled:cursor-wait disabled:opacity-60">
                 <ShoppingCart size={16} />{added ? `تمت الإضافة (${quantity})` : "أضف إلى السلة"}
               </button>
             </div>
@@ -245,8 +285,20 @@ export default function ProductDetails({ product }) {
         </section>
 
         <section className="min-w-0" aria-label="صور المنتج" dir="rtl">
-          <div className="relative overflow-hidden rounded-lg bg-[#f0f1f1]">
-            <img src={gallery[activeImage]} alt={product.name} className="aspect-square w-full object-contain" />
+          <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-100">
+            <AnimatePresence mode="sync" initial={false}>
+              <motion.img
+                key={`${activeImage}-${gallery[activeImage]}`}
+                src={gallery[activeImage]}
+                alt={product.name}
+                draggable={false}
+                initial={{ opacity: 0, scale: 1.015 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.995 }}
+                transition={{ opacity: { duration: 0.22, ease: "easeInOut" }, scale: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } }}
+                className="absolute inset-0 h-full w-full object-contain"
+              />
+            </AnimatePresence>
             {gallery.length > 1 && <>
               <button type="button" aria-label="الصورة السابقة" onClick={() => selectImage(-1)} className="absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/95 text-gray-600 shadow hover:text-black"><ChevronRight size={20} /></button>
               <button type="button" aria-label="الصورة التالية" onClick={() => selectImage(1)} className="absolute left-4 top-1/2 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/95 text-gray-600 shadow hover:text-black"><ChevronLeft size={20} /></button>

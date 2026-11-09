@@ -33,6 +33,12 @@ router.post(
   asyncHandler(authController.logoutAll),
 );
 router.get("/me", isAuth, asyncHandler(authController.me));
+router.delete(
+  "/me",
+  sensitiveLimiter,
+  isAuth,
+  asyncHandler(authController.deleteAccount),
+);
 router.post(
   "/verify-email",
   sensitiveLimiter,

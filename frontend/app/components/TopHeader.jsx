@@ -5,10 +5,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowUpLeft, Search, X } from "lucide-react";
-import { products } from "../data/products";
+import { API_BASE_URL, normalizeProduct } from "../lib/productApi";
 
 const searchChips = ["دروع كريستال", "مجسمات", "هدايا تذكارية", "دروع فاخرة"];
-const popularProducts = products.slice(0, 5);
 
 function normalizeSearch(value) {
   return value
@@ -22,11 +21,23 @@ function normalizeSearch(value) {
 export default function TopHeader() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [products, setProducts] = useState([]);
   const searchInputRef = useRef(null);
   const router = useRouter();
   const normalizedQuery = normalizeSearch(searchQuery.trim());
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`${API_BASE_URL}/products`, { signal: controller.signal, cache: "no-store" })
+      .then((response) => response.json())
+      .then((payload) => setProducts((payload.products || []).map(normalizeProduct)))
+      .catch((error) => {
+        if (error.name !== "AbortError") setProducts([]);
+      });
+    return () => controller.abort();
+  }, []);
+
   const filteredProducts = useMemo(() => {
-    if (!normalizedQuery) return popularProducts;
+    if (!normalizedQuery) return products.slice(0, 5);
     if (["دروع كريستال", "مجسمات", "هدايا تذكارية", "دروع فاخرة"].includes(searchQuery.trim())) {
       const categoryWords = {
         "دروع كريستال": ["درع", "كريستال"],
@@ -37,7 +48,7 @@ export default function TopHeader() {
       return products.filter((product) => categoryWords.some((word) => normalizeSearch(product.name).includes(normalizeSearch(word))));
     }
     return products.filter((product) => normalizeSearch(`${product.name} ${product.description}`).includes(normalizedQuery));
-  }, [normalizedQuery, searchQuery, popularProducts]);
+  }, [normalizedQuery, searchQuery, products]);
 
   useEffect(() => {
     if (isSearchOpen) searchInputRef.current?.focus();
@@ -49,7 +60,7 @@ export default function TopHeader() {
       if (event.key === "Escape") setIsSearchOpen(false);
       if (event.key === "Enter" && filteredProducts[0]) {
         setIsSearchOpen(false);
-        router.push(`/products/${filteredProducts[0].id}`);
+        router.push(`/products/${filteredProducts[0].slug}`);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -77,8 +88,8 @@ export default function TopHeader() {
             </span>
           </button>
 
-          <a href="mailto:palmera@palmera-adv.com" dir="ltr" className="shrink-0 text-xs text-gray-200 transition-colors hover:text-white">
-            palmera@palmera-adv.com
+          <a href="mailto:alzmam@alzmam-adv.com" dir="ltr" className="shrink-0 text-xs text-gray-200 transition-colors hover:text-white">
+            alzmam@alzmam-adv.com
           </a>
         </div>
       </div>
@@ -138,10 +149,10 @@ export default function TopHeader() {
                 <ul className="divide-y divide-gray-100">
                   {filteredProducts.map((product) => (
                     <li key={product.id}>
-                      <Link href={`/products/${product.id}`} onClick={closeSearch} className="flex items-center gap-3 py-2.5 text-sm text-gray-600 transition-colors hover:text-gray-950">
+                      <Link href={`/products/${product.slug}`} onClick={closeSearch} className="flex items-center gap-3 py-2.5 text-sm text-gray-600 transition-colors hover:text-gray-950">
                         <Search size={15} className="shrink-0 text-gray-400" />
                         <span className="min-w-0 flex-1 truncate">{product.name}</span>
-                        <span className="hidden shrink-0 text-xs text-gray-400 sm:inline">{product.price}</span>
+                        <span className="hidden shrink-0 text-xs text-gray-400 sm:inline">{new Intl.NumberFormat("ar-SA").format(product.price)} ر.س</span>
                         <ArrowUpLeft size={15} className="shrink-0 text-gray-400" />
                       </Link>
                     </li>

@@ -6,7 +6,7 @@ const LOGIN_REQUEST_LIMIT = 8;
 const RATE_LIMIT_RESPONSE = {
   error: {
     code: "RATE_LIMITED",
-    message: "Too many requests. Please try again later.",
+    message: "عدد الطلبات كبير. يرجى المحاولة مرة أخرى لاحقًا.",
   },
 };
 

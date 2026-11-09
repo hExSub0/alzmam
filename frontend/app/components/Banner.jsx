@@ -1,30 +1,40 @@
-﻿'use client';
+'use client';
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Autoplay } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 
-const banners = [
-  { src: "/images/banner-1.webp", alt: "دروع وهدايا بالميرا" },
-  { src: "/images/banner-2.webp", alt: "هدايا دعائية من بالميرا" },
-  { src: "/images/banner-3.webp", alt: "منتجات بالميرا" },
+const defaultBanners = [
+  { src: "/images/banner-1.webp", alt: "دروع وهدايا الزمام" },
+  { src: "/images/banner-2.webp", alt: "هدايا دعائية من الزمام" },
+  { src: "/images/banner-3.webp", alt: "منتجات الزمام" },
 ];
 
 export default function Banner() {
   const swiperRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [banners, setBanners] = useState(defaultBanners);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    fetch(`${(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api")}/banners`, { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => { if (Array.isArray(data?.banners)) setBanners(data.banners); })
+      .catch(() => {});
+  }, []);
 
   return (
-    <section aria-label="عروض بالميرا" className="mx-auto w-[75%] max-w-[1200px] py-4">
-      <Swiper
+    <section aria-label="عروض الزمام" className="mx-auto w-[75%] max-w-[1200px] py-4">
+      {isMounted && banners.length > 0 && <Swiper
         dir="rtl"
         modules={[Autoplay]}
         autoplay={{ delay: 4500, disableOnInteraction: false, pauseOnMouseEnter: true }}
         loop
         onSwiper={(swiper) => { swiperRef.current = swiper; }}
         onSlideChange={(swiper) => setActiveIndex(swiper.realIndex)}
-        className="palmera-banner-swiper overflow-hidden rounded-md"
+        className="alzmam-banner-swiper overflow-hidden rounded-md"
       >
         {banners.map((banner) => (
           <SwiperSlide key={banner.src}>
@@ -35,8 +45,8 @@ export default function Banner() {
             />
           </SwiperSlide>
         ))}
-      </Swiper>
-      <div className="mt-3 flex items-center justify-center gap-2" aria-label="اختيار صورة العرض">
+      </Swiper>}
+      {banners.length > 1 && <div className="mt-3 flex items-center justify-center gap-2" aria-label="اختيار صورة العرض">
         {banners.map((banner, index) => (
           <button
             key={banner.src}
@@ -49,7 +59,7 @@ export default function Banner() {
             }`}
           />
         ))}
-      </div>
+      </div>}
     </section>
   );
 }

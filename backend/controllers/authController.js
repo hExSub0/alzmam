@@ -11,7 +11,7 @@ const {
   signAccessToken,
   signRefreshToken,
 } = require("../utils/tokens");
-const { setAuthCookies, clearAuthCookies } = require("../utils/cookies");
+const { setCsrfCookie, setAuthCookies, clearAuthCookies } = require("../utils/cookies");
 const { issueCsrfToken } = require("../middlewares/csrf");
 const { sendVerificationCode, sendPasswordReset } = require("../utils/email");
 
@@ -26,7 +26,7 @@ const EMAIL_VERIFICATION_TTL_MS = 10 * 60 * 1000;
 const EMAIL_VERIFICATION_COOLDOWN_MS = 60 * 1000;
 const PASSWORD_RESET_TTL_MS = 30 * 60 * 1000;
 const MAX_EMAIL_VERIFICATION_ATTEMPTS = 5;
-const INVALID_CREDENTIALS_MESSAGE = "Invalid email or password";
+const INVALID_CREDENTIALS_MESSAGE = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
 const INVALID_CREDENTIALS_CODE = "INVALID_CREDENTIALS";
 const DUMMY_PASSWORD = "not-a-real-account-password";
 
@@ -100,18 +100,6 @@ const revokeUserSessions = async (userId) => {
   );
 };
 
-const setCsrfCookie = (res, csrfToken) => {
-  const cookieOptions = {
-    httpOnly: false,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/api/auth",
-    maxAge: 14 * 24 * 60 * 60 * 1000,
-  };
-
-  res.cookie("csrfToken", csrfToken, cookieOptions);
-};
-
 const register = async (req, res) => {
   const { name, firstName, lastName, email, password } = req.body;
   const normalizedEmail = email.toLowerCase();
@@ -119,8 +107,12 @@ const register = async (req, res) => {
 
   const existingUser = await User.exists({ email: normalizedEmail });
   if (existingUser) {
-    throw new AppError(409, "An account with this email already exists", "EMAIL_EXISTS");
+    throw new AppError(409, "يوجد حساب مسجل بهذا البريد الإلكتروني بالفعل.", "EMAIL_EXISTS");
   }
+
+  const existingUserCount = await User.countDocuments();
+  const isFirstUser = existingUserCount === 0;
+  const userRole = isFirstUser ? "admin" : "user";
 
   const hashedPassword = await hashPassword(password);
   const verificationCode = String(crypto.randomInt(100000, 1000000));
@@ -130,7 +122,7 @@ const register = async (req, res) => {
     name: fullName,
     email: normalizedEmail,
     password: hashedPassword,
-    role: "user",
+    role: userRole,
     emailVerificationHash: hashVerificationCode(verificationCode),
     emailVerificationExpiresAt: verificationExpiration,
     emailVerificationAttempts: 0,
@@ -140,7 +132,7 @@ const register = async (req, res) => {
   await sendVerificationCode(user.email, verificationCode);
 
   res.status(201).json({
-    message: "Account created. Check your email for the verification code.",
+    message: "تم إنشاء الحساب. تحقق من بريدك الإلكتروني للحصول على رمز التحقق.",
     user: createPublicUser(user),
   });
 };
@@ -148,12 +140,35 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   const { email, password } = req.body;
   const normalizedEmail = email.toLowerCase();
-  const user = await User.findOne({ email: normalizedEmail }).select("+password");
+  const user = await User.findOne({ email: normalizedEmail }).select(
+    "+password +emailVerificationHash +emailVerificationExpiresAt +emailVerificationAttempts +emailVerificationSentAt",
+  );
   const passwordHash = user ? user.password : await getDummyPasswordHash();
   const isPasswordValid = await verify(passwordHash, password).catch(() => false);
 
-  if (!user || !user.isActive || !isPasswordValid || !user.isEmailVerified) {
+  if (!user || !user.isActive || !isPasswordValid) {
     throw createInvalidCredentialsError();
+  }
+
+  if (!user.isEmailVerified) {
+    const lastCodeSentAt = user.emailVerificationSentAt?.getTime() || 0;
+    const cooldownHasPassed = Date.now() - lastCodeSentAt >= EMAIL_VERIFICATION_COOLDOWN_MS;
+
+    if (cooldownHasPassed) {
+      const verificationCode = String(crypto.randomInt(100000, 1000000));
+      user.emailVerificationHash = hashVerificationCode(verificationCode);
+      user.emailVerificationExpiresAt = new Date(Date.now() + EMAIL_VERIFICATION_TTL_MS);
+      user.emailVerificationAttempts = 0;
+      user.emailVerificationSentAt = new Date();
+      await user.save();
+      await sendVerificationCode(user.email, verificationCode);
+    }
+
+    throw new AppError(
+      403,
+      "يرجى إدخال رمز التحقق المرسل إلى بريدك الإلكتروني.",
+      "EMAIL_NOT_VERIFIED",
+    );
   }
 
   const tokens = await createSession(user, req, res);
@@ -175,7 +190,7 @@ const refresh = async (req, res) => {
   const refreshToken = req.cookies?.refreshToken;
   if (!refreshToken) {
     clearAuthCookies(res);
-    throw new AppError(401, "Authentication required", "AUTH_REQUIRED");
+    throw new AppError(401, "يرجى تسجيل الدخول للمتابعة.", "AUTH_REQUIRED");
   }
 
   let tokenPayload;
@@ -187,7 +202,7 @@ const refresh = async (req, res) => {
     );
   } catch {
     clearAuthCookies(res);
-    throw new AppError(401, "Authentication required", "AUTH_REQUIRED");
+    throw new AppError(401, "يرجى تسجيل الدخول للمتابعة.", "AUTH_REQUIRED");
   }
 
   const session = await Session.findOne({
@@ -198,14 +213,14 @@ const refresh = async (req, res) => {
 
   if (!session) {
     clearAuthCookies(res);
-    throw new AppError(401, "Authentication required", "AUTH_REQUIRED");
+    throw new AppError(401, "يرجى تسجيل الدخول للمتابعة.", "AUTH_REQUIRED");
   }
 
   const storedTokenHashMatches = session.refreshTokenHash === hashToken(refreshToken);
   if (!storedTokenHashMatches) {
     await revokeUserSessions(session.user);
     clearAuthCookies(res);
-    throw new AppError(401, "Refresh token reuse detected. Please sign in again.", "REFRESH_REUSE");
+    throw new AppError(401, "انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.", "REFRESH_REUSE");
   }
 
   const user = await User.findOne({
@@ -221,7 +236,7 @@ const refresh = async (req, res) => {
       { $set: { revokedAt: currentTime } },
     );
     clearAuthCookies(res);
-    throw new AppError(401, "Authentication required", "AUTH_REQUIRED");
+    throw new AppError(401, "يرجى تسجيل الدخول للمتابعة.", "AUTH_REQUIRED");
   }
 
   const nextRefreshToken = signRefreshToken(user.id, String(session._id));
@@ -245,7 +260,7 @@ const refresh = async (req, res) => {
   if (!updatedSession) {
     await revokeUserSessions(session.user);
     clearAuthCookies(res);
-    throw new AppError(401, "Refresh token reuse detected. Please sign in again.", "REFRESH_REUSE");
+    throw new AppError(401, "انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.", "REFRESH_REUSE");
   }
 
   const csrfToken = issueCsrfToken();
@@ -314,6 +329,15 @@ const me = (req, res) => {
   res.json({ user: createPublicUser(user) });
 };
 
+const deleteAccount = async (req, res) => {
+  const userId = req.user._id;
+
+  await Session.deleteMany({ user: userId });
+  await User.deleteOne({ _id: userId });
+  clearAuthCookies(res);
+  res.status(204).end();
+};
+
 const verifyEmail = async (req, res) => {
   const { email, code } = req.body;
   const user = await User.findOne({ email }).select(
@@ -325,7 +349,7 @@ const verifyEmail = async (req, res) => {
     && user.emailVerificationExpiresAt >= new Date();
 
   if (!hasValidUser || user.emailVerificationAttempts >= MAX_EMAIL_VERIFICATION_ATTEMPTS) {
-    throw new AppError(400, "Invalid or expired verification code", "INVALID_CODE");
+    throw new AppError(400, "رمز التحقق غير صحيح أو انتهت صلاحيته.", "INVALID_CODE");
   }
 
   user.emailVerificationAttempts += 1;
@@ -340,7 +364,7 @@ const verifyEmail = async (req, res) => {
     }
 
     await user.save();
-    throw new AppError(400, "Invalid or expired verification code", "INVALID_CODE");
+    throw new AppError(400, "رمز التحقق غير صحيح أو انتهت صلاحيته.", "INVALID_CODE");
   }
 
   user.isEmailVerified = true;
@@ -349,7 +373,7 @@ const verifyEmail = async (req, res) => {
   user.emailVerificationAttempts = 0;
   await user.save();
 
-  res.json({ message: "Email verified successfully" });
+  res.json({ message: "تم تأكيد البريد الإلكتروني بنجاح." });
 };
 
 const resendVerification = async (req, res) => {
@@ -363,7 +387,7 @@ const resendVerification = async (req, res) => {
     const cooldownHasPassed = Date.now() - lastCodeSentAt >= EMAIL_VERIFICATION_COOLDOWN_MS;
 
     if (!cooldownHasPassed) {
-      throw new AppError(429, "Please wait before requesting another code", "RESEND_COOLDOWN");
+      throw new AppError(429, "يرجى الانتظار قبل طلب رمز جديد.", "RESEND_COOLDOWN");
     }
 
     const verificationCode = String(crypto.randomInt(100000, 1000000));
@@ -376,7 +400,7 @@ const resendVerification = async (req, res) => {
     await sendVerificationCode(user.email, verificationCode);
   }
 
-  res.json({ message: "If the account needs verification, a code has been sent." });
+  res.json({ message: "إذا كان الحساب بحاجة إلى التحقق، فسيتم إرسال رمز إليك." });
 };
 
 const forgotPassword = async (req, res) => {
@@ -392,7 +416,7 @@ const forgotPassword = async (req, res) => {
     await sendPasswordReset(user.email, resetToken);
   }
 
-  res.json({ message: "If an account exists, password reset instructions have been sent." });
+  res.json({ message: "إذا كان الحساب موجودًا، فستصلك تعليمات إعادة تعيين كلمة المرور." });
 };
 
 const resetPassword = async (req, res) => {
@@ -405,7 +429,7 @@ const resetPassword = async (req, res) => {
   });
 
   if (!user) {
-    throw new AppError(400, "Invalid or expired reset token", "INVALID_RESET_TOKEN");
+    throw new AppError(400, "رابط إعادة تعيين كلمة المرور غير صحيح أو انتهت صلاحيته.", "INVALID_RESET_TOKEN");
   }
 
   user.password = await hashPassword(password);
@@ -416,7 +440,7 @@ const resetPassword = async (req, res) => {
 
   await revokeUserSessions(user._id);
 
-  res.json({ message: "Password reset successfully. Please sign in again." });
+  res.json({ message: "تم تغيير كلمة المرور. يرجى تسجيل الدخول مرة أخرى." });
 };
 
 const changePassword = async (req, res) => {
@@ -426,7 +450,7 @@ const changePassword = async (req, res) => {
 
   const isCurrentPasswordValid = await verify(user.password, currentPassword).catch(() => false);
   if (!isCurrentPasswordValid) {
-    throw new AppError(400, "Current password is incorrect", "INVALID_PASSWORD");
+    throw new AppError(400, "كلمة المرور الحالية غير صحيحة.", "INVALID_PASSWORD");
   }
 
   user.password = await hashPassword(password);
@@ -436,7 +460,7 @@ const changePassword = async (req, res) => {
   await revokeUserSessions(user._id);
   clearAuthCookies(res);
 
-  res.json({ message: "Password changed. Please sign in again." });
+  res.json({ message: "تم تغيير كلمة المرور. يرجى تسجيل الدخول مرة أخرى." });
 };
 
 const listSessions = async (req, res) => {
@@ -464,7 +488,7 @@ const revokeSession = async (req, res) => {
   );
 
   if (!revokeResult.modifiedCount) {
-    throw new AppError(404, "Session not found", "SESSION_NOT_FOUND");
+    throw new AppError(404, "لم يتم العثور على الجلسة.", "SESSION_NOT_FOUND");
   }
 
   res.status(204).end();
@@ -478,6 +502,7 @@ module.exports = {
   logout,
   logoutAll,
   me,
+  deleteAccount,
   verifyEmail,
   resendVerification,
   forgotPassword,

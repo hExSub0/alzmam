@@ -4,7 +4,7 @@ const AppError = require("../utils/AppError");
 
 const createAuthenticationRequiredError = () => new AppError(
   401,
-  "Authentication required",
+  "يرجى تسجيل الدخول للمتابعة.",
   "AUTH_REQUIRED",
 );
 const ACCESS_TOKEN_OPTIONS = {

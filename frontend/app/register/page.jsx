@@ -3,7 +3,7 @@ import TopHeader from "../components/TopHeader";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
-export const metadata = { title: "إنشاء حساب | بالميرا" };
+export const metadata = { title: "إنشاء حساب | الزمام" };
 
 export default function RegisterPage() {
   return <>

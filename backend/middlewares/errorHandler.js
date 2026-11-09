@@ -7,7 +7,7 @@ const handleDuplicateKeyError = (error) => {
 
   return new AppError(
     409,
-    "An account with this email already exists",
+    "يوجد حساب مسجل بهذا البريد الإلكتروني بالفعل.",
     "EMAIL_EXISTS",
   );
 };
@@ -20,7 +20,7 @@ const handleMongooseValidationError = (error) => {
     return null;
   }
 
-  return new AppError(400, "Invalid request data", "VALIDATION_ERROR");
+  return new AppError(400, "البيانات المدخلة غير صحيحة.", "VALIDATION_ERROR");
 };
 
 const logUnexpectedError = (error) => {
@@ -44,7 +44,7 @@ module.exports = (error, _req, res, _next) => {
 
   if (!isKnownError && statusCode >= 500) {
     logUnexpectedError(error);
-    message = "An unexpected error occurred";
+    message = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.";
     code = "INTERNAL_ERROR";
   }
 

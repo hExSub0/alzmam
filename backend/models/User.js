@@ -34,6 +34,14 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  favorites: {
+    type: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+    }],
+    default: [],
+    select: false,
+  },
   passwordChangedAt: {
     type: Date,
     default: null,

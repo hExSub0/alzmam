@@ -33,7 +33,7 @@ const getUser = async (req, res) => {
   const user = await User.findById(userId).select(USER_LIST_FIELDS);
 
   if (!user) {
-    throw new AppError(404, "User not found", "USER_NOT_FOUND");
+    throw new AppError(404, "لم يتم العثور على المستخدم.", "USER_NOT_FOUND");
   }
 
   res.json({ user });
@@ -46,12 +46,12 @@ const updateRole = async (req, res) => {
   const isCurrentUser = targetUserId.toLowerCase() === currentUserId.toLowerCase();
 
   if (isCurrentUser) {
-    throw new AppError(400, "You cannot change your own role", "SELF_ROLE_CHANGE");
+    throw new AppError(400, "لا يمكنك تغيير صلاحية حسابك.", "SELF_ROLE_CHANGE");
   }
 
   const user = await User.findById(targetUserId);
   if (!user) {
-    throw new AppError(404, "User not found", "USER_NOT_FOUND");
+    throw new AppError(404, "لم يتم العثور على المستخدم.", "USER_NOT_FOUND");
   }
 
   const isDemotingAdmin = user.role === "admin" && requestedRole === "user";
@@ -60,7 +60,7 @@ const updateRole = async (req, res) => {
     const isLastActiveAdmin = activeAdminCount <= 1;
 
     if (isLastActiveAdmin) {
-      throw new AppError(409, "The last active administrator cannot be demoted", "LAST_ADMIN");
+      throw new AppError(409, "لا يمكن خفض صلاحية آخر مسؤول نشط.", "LAST_ADMIN");
     }
   }
 
@@ -78,12 +78,12 @@ const updateStatus = async (req, res) => {
   const isDeactivatingUser = requestedStatus === false;
 
   if (isCurrentUser && isDeactivatingUser) {
-    throw new AppError(400, "You cannot deactivate your own account", "SELF_DEACTIVATION");
+    throw new AppError(400, "لا يمكنك تعطيل حسابك.", "SELF_DEACTIVATION");
   }
 
   const user = await User.findById(targetUserId);
   if (!user) {
-    throw new AppError(404, "User not found", "USER_NOT_FOUND");
+    throw new AppError(404, "لم يتم العثور على المستخدم.", "USER_NOT_FOUND");
   }
 
   const isDeactivatingActiveAdmin = user.role === "admin" && user.isActive && isDeactivatingUser;
@@ -92,7 +92,7 @@ const updateStatus = async (req, res) => {
     const isLastActiveAdmin = activeAdminCount <= 1;
 
     if (isLastActiveAdmin) {
-      throw new AppError(409, "The last active administrator cannot be deactivated", "LAST_ADMIN");
+      throw new AppError(409, "لا يمكن تعطيل آخر مسؤول نشط.", "LAST_ADMIN");
     }
   }
 

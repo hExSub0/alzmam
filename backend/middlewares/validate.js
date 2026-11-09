@@ -9,7 +9,7 @@ const validate = (schema, target = "body") => (req, _res, next) => {
   });
 
   if (validationResult.error) {
-    return next(new AppError(400, "Invalid request data", "VALIDATION_ERROR"));
+    return next(new AppError(400, "البيانات المدخلة غير صحيحة.", "VALIDATION_ERROR"));
   }
 
   if (target === "query") {

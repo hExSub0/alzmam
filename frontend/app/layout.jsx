@@ -1,6 +1,8 @@
 import { Inter } from "next/font/google";
 import "./css/index.css";
 import { CartProvider } from "./components/CartProvider";
+import { AuthProvider } from "./components/AuthProvider";
+import { FavoritesProvider } from "./components/FavoritesProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -8,15 +10,19 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Palmera Store",
-  description: "Palmera Gift & Advertising Store",
+  title: "Alzmam Store",
+  description: "Alzmam Gift & Advertising Store",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="ar" dir="rtl" className={`${inter.variable} antialiased`}>
       <body>
-        <CartProvider>{children}</CartProvider>
+        <AuthProvider>
+          <FavoritesProvider>
+            <CartProvider>{children}</CartProvider>
+          </FavoritesProvider>
+        </AuthProvider>
       </body>
     </html>
   );

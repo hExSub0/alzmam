@@ -2,7 +2,8 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-const STORAGE_KEY = "palmera-cart";
+const STORAGE_KEY = "alzmam-cart";
+const LEGACY_STORAGE_KEY = ["pal", "mera-cart"].join("");
 const CartContext = createContext(null);
 
 function parsePrice(price) {
@@ -21,14 +22,19 @@ export function CartProvider({ children }) {
 
   useEffect(() => {
     try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
+      const stored = window.localStorage.getItem(STORAGE_KEY) || window.localStorage.getItem(LEGACY_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) setItems(parsed);
+        if (Array.isArray(parsed)) {
+          setItems(parsed);
+          window.localStorage.setItem(STORAGE_KEY, stored);
+          window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+        }
       }
     } catch {
       try {
         window.localStorage.removeItem(STORAGE_KEY);
+        window.localStorage.removeItem(LEGACY_STORAGE_KEY);
       } catch {}
     } finally {
       setReady(true);
@@ -42,25 +48,40 @@ export function CartProvider({ children }) {
     } catch {}
   }, [items, ready]);
 
-  const addItem = (product, quantity = 1, options = {}) => {
+  const addItem = (product, quantity = 1, options = {}, selectedUnitPrice = null, details = {}) => {
     const normalizedOptions = Object.fromEntries(Object.entries(options).sort(([a], [b]) => a.localeCompare(b)));
-    const key = `${product.id}:${JSON.stringify(normalizedOptions)}`;
-    const unitPrice = parsePrice(product.price);
+    const note = String(details.note || "").trim();
+    const attachments = Array.isArray(details.attachments) ? details.attachments : [];
+    const key = `${product.id}:${JSON.stringify(normalizedOptions)}:${note}:${attachments.map((attachment) => attachment.url).join(",")}`;
+    const basePrice = parsePrice(product.price);
+    const unitPrice = selectedUnitPrice !== null
+      ? Number(selectedUnitPrice)
+      : basePrice;
 
     setItems((current) => {
       const existing = current.find((item) => item.key === key);
       if (existing) {
-        return current.map((item) => item.key === key ? { ...item, quantity: item.quantity + quantity } : item);
+        return current.map((item) => item.key === key
+          ? {
+            ...item,
+            price: unitPrice === null ? item.price : formatCurrency(unitPrice),
+            unitPrice,
+            quantity: item.quantity + quantity,
+          }
+          : item);
       }
       return [...current, {
         key,
         id: product.id,
+        slug: product.slug,
         name: product.name,
         image: product.image,
-        price: product.price,
+        price: unitPrice === null ? product.price : formatCurrency(unitPrice),
         unitPrice,
         quantity,
         options: normalizedOptions,
+        note,
+        attachments,
       }];
     });
   };

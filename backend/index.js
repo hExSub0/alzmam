@@ -2,6 +2,7 @@ require("dotenv").config();
 const app = require("./app");
 const connectDB = require("./db/connectDB");
 const mongoose = require("mongoose");
+const attachOrderNotifications = require("./realtime/orderNotifications");
 
 const REQUIRED_SECRET_NAMES = [
   "ACCESS_TOKEN_SECRET",
@@ -40,15 +41,19 @@ const startServer = async () => {
   await connectDB();
 
   const port = Number(process.env.PORT || DEFAULT_PORT);
-  return app.listen(port, () => {
+  const httpServer = app.listen(port, () => {
     console.log(`ECO API listening on port ${port}`);
   });
+  server = httpServer;
+  server.orderNotifications = attachOrderNotifications(httpServer);
+  return httpServer;
 };
 
 let server;
 
 const shutdown = async () => {
   if (server) {
+    server.orderNotifications?.close();
     await new Promise((resolve) => server.close(resolve));
   }
 

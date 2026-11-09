@@ -69,7 +69,7 @@ const csrfProtection = (req, _res, next) => {
   const originIsAllowed = !requestOrigin || allowedOrigins.includes(requestOrigin);
 
   if (!originIsAllowed) {
-    return next(new AppError(403, "Request rejected", "CSRF_REJECTED"));
+    return next(new AppError(403, "تم رفض الطلب.", "CSRF_REJECTED"));
   }
 
   const cookieToken = req.cookies?.csrfToken;
@@ -78,7 +78,7 @@ const csrfProtection = (req, _res, next) => {
   const cookieTokenIsValid = isValidToken(cookieToken);
 
   if (!tokensMatch || !cookieTokenIsValid) {
-    return next(new AppError(403, "CSRF token is missing or invalid", "CSRF_REJECTED"));
+    return next(new AppError(403, "تعذر التحقق من أمان الطلب. حدّث الصفحة وحاول مرة أخرى.", "CSRF_REJECTED"));
   }
 
   return next();

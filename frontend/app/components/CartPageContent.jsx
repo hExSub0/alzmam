@@ -1,12 +1,29 @@
 'use client';
 
-import Image from "next/image";
 import Link from "next/link";
-import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { AnimatePresence } from "framer-motion";
+import { FileText, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { formatCurrency, useCart } from "./CartProvider";
+import { useAuth } from "./AuthProvider";
+import AuthPage from "./AuthPage";
+import { getProductImageUrl } from "../lib/productApi";
 
 export default function CartPageContent() {
+  const router = useRouter();
+  const { user, isReady: authReady } = useAuth();
+  const [authMode, setAuthMode] = useState(null);
   const { items, total, hasUnpricedItems, ready, setItemQuantity, removeItem, clearCart } = useCart();
+
+  const continueToCheckout = () => {
+    if (!user) {
+      setAuthMode("login");
+      return;
+    }
+
+    router.push("/checkout");
+  };
 
   return (
     <main className="mx-auto min-h-[55vh] w-full max-w-6xl px-4 py-10 sm:px-6" dir="rtl">
@@ -26,13 +43,15 @@ export default function CartPageContent() {
             <div className="divide-y divide-gray-100">
               {items.map((item) => (
                 <article key={item.key} className="flex flex-wrap items-center gap-4 p-4 sm:flex-nowrap sm:p-5">
-                  <Link href={`/products/${item.id}`} className="h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-gray-50">
-                    <Image src={item.image} alt={item.name} width={96} height={96} className="h-full w-full object-contain" />
+                  <Link href={`/products/${item.slug || item.id}`} className="h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-gray-50">
+                    <img src={item.image} alt={item.name} width={96} height={96} className="h-full w-full object-contain" />
                   </Link>
                   <div className="min-w-[150px] flex-1">
-                    <Link href={`/products/${item.id}`} className="font-bold text-gray-900 transition-colors hover:text-gray-600">{item.name}</Link>
+                    <Link href={`/products/${item.slug || item.id}`} className="font-bold text-gray-900 transition-colors hover:text-gray-600">{item.name}</Link>
                     <p className="mt-1 text-sm font-semibold text-green-700">{item.price}</p>
                     {Object.entries(item.options || {}).map(([label, value]) => <p key={label} className="mt-1 text-xs text-gray-500">{label}: {value}</p>)}
+                    {item.note && <p className="mt-2 whitespace-pre-wrap break-words text-xs leading-5 text-gray-600"><span className="font-semibold">ملاحظة: </span>{item.note}</p>}
+                    {item.attachments?.length > 0 && <div className="mt-2 flex flex-wrap gap-1.5">{item.attachments.map((attachment) => <a key={attachment.url} href={getProductImageUrl(attachment.url)} target="_blank" rel="noreferrer" className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-[10px] font-semibold text-gray-600 hover:bg-gray-50"><FileText size={13} className="shrink-0" /><span className="max-w-36 truncate">{attachment.name}</span></a>)}</div>}
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 items-center overflow-hidden rounded-lg border border-gray-200" dir="ltr">
@@ -61,11 +80,22 @@ export default function CartPageContent() {
               <span>الإجمالي</span>
               <span className="text-green-700">{hasUnpricedItems ? "يحدد حسب خيارات المنتج" : formatCurrency(total)}</span>
             </div>
-            <p className="mt-3 text-xs leading-5 text-gray-500">قد تختلف الأسعار عند اختيار المقاس أو طريقة التنفيذ.</p>
-            <button type="button" className="mt-6 w-full cursor-pointer rounded-full bg-[#1D1F1F] px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-[#343838]">متابعة إتمام الطلب</button>
+            <p className="mt-3 text-xs leading-5 text-gray-500">تُضاف أسعار الخيارات إلى السعر الأساسي بعد اختيارها من صفحة المنتج.</p>
+            <button type="button" disabled={!authReady} onClick={continueToCheckout} className="mt-6 w-full cursor-pointer rounded-full bg-[#1D1F1F] px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-[#343838] disabled:cursor-wait disabled:opacity-60">متابعة إتمام الطلب</button>
           </aside>
         </div>
       )}
+      <AnimatePresence>
+        {authMode && (
+          <AuthPage
+            mode={authMode}
+            modal
+            onClose={() => setAuthMode(null)}
+            onModeChange={setAuthMode}
+            onLoginSuccess={() => router.push("/checkout")}
+          />
+        )}
+      </AnimatePresence>
     </main>
   );
 }

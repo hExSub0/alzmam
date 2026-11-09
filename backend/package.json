@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
+    "make-admin": "node scripts/bootstrapAdmin.js",
     "test": "jest --runInBand"
   },
   "engines": {
@@ -23,7 +24,9 @@
     "joi": "^18.0.1",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.0",
-    "resend": "^6.5.2"
+    "multer": "^2.5.0",
+    "resend": "^6.5.2",
+    "ws": "^8.22.2"
   },
   "devDependencies": {
     "jest": "^30.2.0",

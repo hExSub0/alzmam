@@ -1,45 +1,65 @@
-﻿'use client';
+"use client";
 
-import { useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Heart, ShoppingCart } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import Link from "next/link";
-import { products } from "../data/products";
-import { useCart } from "./CartProvider";
+import { API_BASE_URL, normalizeProduct } from "../lib/productApi";
+import ProductCard from "./ProductCard";
 import "swiper/css";
-
-function PriceText({ price }) {
-  const match = price.match(/^(.*?)([٠-٩0-9][٠-٩0-9.,٬٫]*)(\s*(?:ر\.س|ريال(?: سعودي)?))?$/u);
-
-  if (!match) return price;
-
-  return (
-    <>
-      <span>{match[1]}</span>
-      <span className="text-green-700">{match[2]}{match[3]}</span>
-    </>
-  );
-}
 
 export default function LatestProducts() {
   const swiperRef = useRef(null);
-  const [favorites, setFavorites] = useState({});
-  const { addItem } = useCart();
+  const [products, setProducts] = useState([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadProducts = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/products`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        const payload = await response.json();
+
+        if (!response.ok) {
+          throw new Error(payload?.error?.message || "تعذر تحميل المنتجات.");
+        }
+
+        setProducts((payload.products || []).map(normalizeProduct));
+        setLoadError("");
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          setLoadError(error.message || "تعذر تحميل المنتجات.");
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoadingProducts(false);
+        }
+      }
+    };
+
+    loadProducts();
+    return () => controller.abort();
+  }, []);
 
   return (
-    <section aria-labelledby="latest-products-title" className="mx-auto my-10 w-[75%] max-w-[1200px]">
+    <section aria-labelledby="latest-products-title" dir="rtl" className="mx-auto my-10 w-[92%] max-w-[1200px] sm:w-[88%]">
       <div className="mb-5 flex items-center justify-between gap-4">
         <h2 id="latest-products-title" className="text-lg font-bold text-gray-900">
-            أحدث المنتجات
+          أحدث المنتجات
         </h2>
         <div className="flex items-center gap-3">
-          <a
-            href="https://palmera-adv.com/ar/latest-products"
+          <Link
+            href="/products"
             className="text-base text-gray-600 transition-colors hover:text-gray-950"
           >
             عرض الكل
-          </a>
+          </Link>
           <button
             type="button"
             aria-label="المنتج السابق"
@@ -59,66 +79,36 @@ export default function LatestProducts() {
         </div>
       </div>
 
-      <Swiper
-        modules={[Autoplay]}
-        dir="rtl"
-        onSwiper={(swiper) => { swiperRef.current = swiper; }}
-        loop
-        autoplay={{ delay: 5000, disableOnInteraction: false }}
-        slidesPerView={1.4}
-        spaceBetween={12}
-        breakpoints={{
-          480: { slidesPerView: 2, spaceBetween: 16 },
-          768: { slidesPerView: 3, spaceBetween: 16 },
-          1024: { slidesPerView: 4, spaceBetween: 20 },
-        }}
-        className="!overflow-hidden"
-      >
-        {products.map((product) => (
-          <SwiperSlide key={product.name} className="h-auto">
-            <div className="group overflow-hidden rounded-lg border border-gray-200 bg-white transition-shadow hover:shadow-md">
-              <div className="relative aspect-[4/3] w-full overflow-hidden bg-white">
-                <Link href={`/products/${product.id}`} aria-label={product.name} className="block h-full w-full">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    loading="lazy"
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                  />
-                </Link>
-                <button
-                  type="button"
-                  aria-label={favorites[product.name] ? "إزالة من المفضلة" : "أضف إلى المفضلة"}
-                  aria-pressed={Boolean(favorites[product.name])}
-                  onClick={() => setFavorites((current) => ({
-                    ...current,
-                    [product.name]: !current[product.name],
-                  }))}
-                  className={`absolute right-3 top-3 z-10 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/95 shadow-md transition-all duration-200 hover:scale-110 focus-visible:opacity-100 ${favorites[product.name] ? "text-red-600 opacity-100" : "text-gray-600 opacity-0 group-hover:opacity-100 hover:text-red-600"}`}
-                >
-                  <Heart size={19} fill={favorites[product.name] ? "currentColor" : "none"} />
-                </button>
-              </div>
-              <div className="p-4 text-center" dir="rtl">
-                <Link href={`/products/${product.id}`} className="text-gray-800 transition-colors group-hover:text-black">
-                  <h3 className="line-clamp-2 text-center text-base font-bold">
-                  {product.name}
-                  </h3>
-                </Link>
-                <p className="mt-2 text-center text-base font-extrabold text-gray-900"><PriceText price={product.price} /></p>
-                <button
-                  type="button"
-                  onClick={() => addItem(product)}
-                  className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1D1F1F] px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#343838]"
-                >
-                  <ShoppingCart size={16} />
-                  أضف إلى السلة
-                </button>
-              </div>
-            </div>
-          </SwiperSlide>
-        ))}
-      </Swiper>
+      {isLoadingProducts ? (
+        <div className="grid min-h-48 place-items-center rounded-xl border border-gray-200 bg-white text-sm text-gray-500">
+          جارٍ تحميل المنتجات…
+        </div>
+      ) : loadError ? (
+        <div role="alert" className="grid min-h-48 place-items-center rounded-xl border border-gray-200 bg-white px-4 text-center text-sm text-gray-600">
+          {loadError}
+        </div>
+      ) : products.length === 0 ? (
+        <div className="grid min-h-48 place-items-center rounded-xl border border-gray-200 bg-white px-4 text-center text-sm text-gray-500">
+          لا توجد منتجات متاحة حاليًا.
+        </div>
+      ) : (
+        <Swiper
+          modules={[Autoplay]}
+          dir="rtl"
+          onSwiper={(swiper) => { swiperRef.current = swiper; }}
+          loop={products.length > 3}
+          autoplay={products.length > 1 ? { delay: 5000, disableOnInteraction: false } : false}
+          slidesPerView="auto"
+          spaceBetween={16}
+          className="!overflow-hidden"
+        >
+          {products.map((product) => (
+            <SwiperSlide key={product.id} className="!h-auto !w-[230px] sm:!w-[245px]">
+              <ProductCard product={product} />
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      )}
     </section>
   );
 }
