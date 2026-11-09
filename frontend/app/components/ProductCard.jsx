@@ -1,12 +1,13 @@
 "use client";
 
-import { Heart, ShoppingCart } from "lucide-react";
+import { Heart } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "./CartProvider";
 import { useAuth } from "./AuthProvider";
 import { useFavorites } from "./FavoritesProvider";
 import { getProductStartingPrice } from "../lib/productApi";
+import QuickAddButton from "./QuickAddButton";
 
 export default function ProductCard({ product }) {
   const router = useRouter();
@@ -29,9 +30,7 @@ export default function ProductCard({ product }) {
     <div className="p-4 text-center" dir="rtl">
       <Link href={`/products/${product.slug}`} className="text-gray-800 transition-colors group-hover:text-black"><h3 className="line-clamp-2 min-h-12 text-base font-bold">{product.name}</h3></Link>
       <p className="mt-0.5 text-base font-extrabold text-gray-900">{hasOptions && <span className="ml-1 text-sm font-medium text-gray-500">يبدأ من</span>}<span className="text-green-700">{price} ر.س</span></p>
-      <button type="button" onClick={() => hasOptions ? router.push(`/products/${product.slug}`) : addItem(product)} className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1D1F1F] px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#343838]">
-        {!hasOptions && <ShoppingCart size={16} />}أضف إلى السلة
-      </button>
+      <QuickAddButton product={product} addItem={addItem} className="mt-4 w-full" />
     </div>
   </article>;
 }

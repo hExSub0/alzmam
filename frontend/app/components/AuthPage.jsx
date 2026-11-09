@@ -89,7 +89,7 @@ function AuthField({ id, label, icon: Icon, error, children }) {
   );
 }
 
-export default function AuthPage({ mode, modal = false, onClose, onModeChange, onLoginSuccess }) {
+export default function AuthPage({ mode, modal = false, onClose, onModeChange, onLoginSuccess, initialMessage = "" }) {
   const router = useRouter();
   const { login, register, verifyEmail, resendVerification } = useAuth();
   const isRegister = mode === "register";
@@ -110,7 +110,7 @@ export default function AuthPage({ mode, modal = false, onClose, onModeChange, o
   const [isResendingCode, setIsResendingCode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
-  const [globalMessage, setGlobalMessage] = useState("");
+  const [globalMessage, setGlobalMessage] = useState(initialMessage);
   const passwordRequirements = [
     { label: "8 أحرف على الأقل", isMet: formData.password.length >= 8 },
     { label: "حرف إنجليزي كبير واحد على الأقل", isMet: /[A-Z]/.test(formData.password) },
@@ -277,8 +277,13 @@ export default function AuthPage({ mode, modal = false, onClose, onModeChange, o
           password: "",
           confirmPassword: "",
         }));
-        switchMode("login");
-        setGlobalMessage("تم تأكيد البريد الإلكتروني. يمكنك تسجيل الدخول الآن.");
+        const verificationSuccessMessage = "تم إنشاء الحساب وتأكيد البريد الإلكتروني. يمكنك تسجيل الدخول الآن.";
+        if (modal) {
+          switchMode("login");
+          setGlobalMessage(verificationSuccessMessage);
+        } else {
+          router.replace("/login?verified=1");
+        }
         return;
       }
 
@@ -519,6 +524,14 @@ export default function AuthPage({ mode, modal = false, onClose, onModeChange, o
               </>
             )}
           </AuthField>
+        )}
+
+        {!isRegister && !isVerificationStep && (
+          <motion.div variants={itemVariants} className="-mt-2 text-left">
+            <Link href="/forgot-password" className="text-sm font-semibold text-neutral-700 hover:text-neutral-950 hover:underline">
+              نسيت كلمة المرور؟
+            </Link>
+          </motion.div>
         )}
 
         {isRegister && !isVerificationStep && (

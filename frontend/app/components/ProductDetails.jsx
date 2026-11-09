@@ -86,6 +86,7 @@ export default function ProductDetails({ product }) {
   const [optionsError, setOptionsError] = useState(false);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const copiedTimeout = useRef(null);
+  const addedTimeout = useRef(null);
   const gallery = product.gallery?.length ? product.gallery : [product.image].filter(Boolean);
   const description = product.description || "";
   const shouldShowReadMore = description.length > 200;
@@ -95,7 +96,10 @@ export default function ProductDetails({ product }) {
   const selectedPrice = getProductPrice(product, selectedOptions);
   const selectImage = (step) => setActiveImage((index) => (index + step + gallery.length) % gallery.length);
 
-  useEffect(() => () => window.clearTimeout(copiedTimeout.current), []);
+  useEffect(() => () => {
+    window.clearTimeout(copiedTimeout.current);
+    window.clearTimeout(addedTimeout.current);
+  }, []);
 
   const handleShare = () => {
     navigator.clipboard?.writeText(window.location.href).catch(() => {});
@@ -112,6 +116,8 @@ export default function ProductDetails({ product }) {
     }
     addItem(product, quantity, selectedOptions, selectedPrice, { note, attachments });
     setAdded(true);
+    window.clearTimeout(addedTimeout.current);
+    addedTimeout.current = window.setTimeout(() => setAdded(false), 2000);
     return true;
   };
 
@@ -277,8 +283,8 @@ export default function ProductDetails({ product }) {
             </div>
             <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <button type="button" disabled={isUploadingAttachments} onClick={() => { if (addSelectedProduct()) router.push("/cart"); }} className="min-h-11 cursor-pointer rounded-full border border-[#1D1F1F] px-4 py-2 text-sm font-bold text-[#1D1F1F] transition-colors hover:bg-[#1D1F1F]/10 disabled:cursor-wait disabled:opacity-60">اشتر الآن</button>
-              <button type="button" disabled={isUploadingAttachments} onClick={addSelectedProduct} className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border border-[#1D1F1F] bg-[#1D1F1F] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#343838] disabled:cursor-wait disabled:opacity-60">
-                <ShoppingCart size={16} />{added ? `تمت الإضافة (${quantity})` : "أضف إلى السلة"}
+              <button type="button" disabled={isUploadingAttachments} onClick={addSelectedProduct} aria-live="polite" className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-bold text-white transition-colors disabled:cursor-wait disabled:opacity-60 ${added ? "border-green-600 bg-green-600 hover:bg-green-600" : "border-[#1D1F1F] bg-[#1D1F1F] hover:bg-[#343838]"}`}>
+                {added ? <Check size={16} /> : <ShoppingCart size={16} />}{added ? "تمت الإضافة إلى السلة" : "أضف إلى السلة"}
               </button>
             </div>
           </section>

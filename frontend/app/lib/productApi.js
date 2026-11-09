@@ -67,3 +67,14 @@ export function getProductPrice(product, selectedOptions = {}) {
 export function getProductStartingPrice(product) {
   return Number(product.price) || 0;
 }
+
+export function getQuickAddSelection(product) {
+  const selectedOptions = Object.fromEntries((product.options || [])
+    .filter((option) => option.label)
+    .map((option) => [option.label, option.values?.[0] || ""]));
+
+  return {
+    options: selectedOptions,
+    price: getProductPrice(product, selectedOptions),
+  };
+}

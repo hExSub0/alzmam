@@ -5,11 +5,16 @@ import Footer from "../components/Footer";
 
 export const metadata = { title: "تسجيل الدخول | الزمام" };
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }) {
+  const params = await searchParams;
+  const initialMessage = params?.verified === "1"
+    ? "تم إنشاء الحساب وتأكيد البريد الإلكتروني. يمكنك تسجيل الدخول الآن."
+    : "";
+
   return <>
     <TopHeader />
     <Header />
-    <AuthPage mode="login" />
+    <AuthPage mode="login" initialMessage={initialMessage} />
     <Footer />
   </>;
 }

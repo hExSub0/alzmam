@@ -28,7 +28,7 @@ const validateEnvironment = () => {
     throw new Error("Access and refresh token secrets must be different");
   }
 
-  const requiredConfiguration = ["MONGO_URI", "EMAIL_FROM", "PASSWORD_RESET_URL"];
+  const requiredConfiguration = ["MONGO_URI", "SENDLIBERTY_API_KEY", "PASSWORD_RESET_URL"];
   for (const configurationName of requiredConfiguration) {
     if (!process.env[configurationName]) {
       throw new Error(`${configurationName} is required`);

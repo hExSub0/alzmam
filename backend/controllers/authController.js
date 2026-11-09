@@ -105,9 +105,31 @@ const register = async (req, res) => {
   const normalizedEmail = email.toLowerCase();
   const fullName = name || `${firstName} ${lastName}`;
 
-  const existingUser = await User.exists({ email: normalizedEmail });
+  const existingUser = await User.findOne({ email: normalizedEmail }).select(
+    "+password +emailVerificationHash +emailVerificationExpiresAt +emailVerificationAttempts +emailVerificationSentAt",
+  );
   if (existingUser) {
-    throw new AppError(409, "يوجد حساب مسجل بهذا البريد الإلكتروني بالفعل.", "EMAIL_EXISTS");
+    if (existingUser.isEmailVerified) {
+      throw new AppError(409, "يوجد حساب مسجل بهذا البريد الإلكتروني بالفعل.", "EMAIL_EXISTS");
+    }
+
+    const passwordMatches = await verify(existingUser.password, password).catch(() => false);
+    if (!passwordMatches) {
+      throw new AppError(409, "يوجد طلب تسجيل بهذا البريد. استخدم كلمة المرور التي أدخلتها عند التسجيل أو سجّل الدخول.", "EMAIL_EXISTS");
+    }
+
+    const verificationCode = String(crypto.randomInt(100000, 1000000));
+    existingUser.emailVerificationHash = hashVerificationCode(verificationCode);
+    existingUser.emailVerificationExpiresAt = new Date(Date.now() + EMAIL_VERIFICATION_TTL_MS);
+    existingUser.emailVerificationAttempts = 0;
+    existingUser.emailVerificationSentAt = new Date();
+    await existingUser.save();
+    await sendVerificationCode(existingUser.email, verificationCode);
+
+    return res.status(200).json({
+      message: "أرسلنا رمز تحقق جديدًا إلى بريدك الإلكتروني.",
+      user: createPublicUser(existingUser),
+    });
   }
 
   const existingUserCount = await User.countDocuments();

@@ -198,6 +198,24 @@ export function AuthProvider({ children }) {
     });
   }, [request]);
 
+  const requestPasswordReset = useCallback(async ({ email }) => {
+    return request("/auth/forgot-password", {
+      method: "POST",
+      auth: false,
+      retryOnUnauthorized: false,
+      body: JSON.stringify({ email }),
+    });
+  }, [request]);
+
+  const resetPassword = useCallback(async ({ token, password }) => {
+    return request("/auth/reset-password", {
+      method: "POST",
+      auth: false,
+      retryOnUnauthorized: false,
+      body: JSON.stringify({ token, password }),
+    });
+  }, [request]);
+
   const logout = useCallback(async () => {
     try {
       await request("/auth/logout", {
@@ -238,11 +256,13 @@ export function AuthProvider({ children }) {
     register,
     verifyEmail,
     resendVerification,
+    requestPasswordReset,
+    resetPassword,
     logout,
     deleteAccount,
     request,
     getAccessToken,
-  }), [user, isReady, login, register, verifyEmail, resendVerification, logout, deleteAccount, request, getAccessToken]);
+  }), [user, isReady, login, register, verifyEmail, resendVerification, requestPasswordReset, resetPassword, logout, deleteAccount, request, getAccessToken]);
 
   return (
     <AuthContext.Provider value={contextValue}>

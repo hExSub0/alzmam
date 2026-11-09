@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Heart, ShoppingCart } from "lucide-react";
+import { Heart } from "lucide-react";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
 import TopHeader from "../components/TopHeader";
@@ -11,6 +11,7 @@ import { useAuth } from "../components/AuthProvider";
 import { useCart } from "../components/CartProvider";
 import { useFavorites } from "../components/FavoritesProvider";
 import { API_BASE_URL, getProductStartingPrice, normalizeProduct } from "../lib/productApi";
+import QuickAddButton from "../components/QuickAddButton";
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -106,14 +107,7 @@ export default function ProductsPage() {
                       {new Intl.NumberFormat("ar-SA", { maximumFractionDigits: 2 }).format(getProductStartingPrice(product))} ر.س
                     </span>
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => product.options?.length ? router.push(`/products/${product.slug}`) : addItem(product)}
-                    className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1D1F1F] px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#343838]"
-                  >
-                    {product.options?.length ? null : <ShoppingCart size={16} />}
-                    {product.options?.length ? "أضف إلى السلة" : "أضف إلى السلة"}
-                  </button>
+                  <QuickAddButton product={product} addItem={addItem} className="mt-4 w-full" />
                 </div>
               </article>
             ))}

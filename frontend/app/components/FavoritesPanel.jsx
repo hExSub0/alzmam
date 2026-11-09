@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Heart, ShoppingCart } from "lucide-react";
+import { Heart } from "lucide-react";
 import { useCart } from "./CartProvider";
 import { useFavorites } from "./FavoritesProvider";
 import { getProductStartingPrice } from "../lib/productApi";
+import QuickAddButton from "./QuickAddButton";
 
 export default function FavoritesPanel() {
   const router = useRouter();
@@ -66,14 +67,7 @@ export default function FavoritesPanel() {
                 {product.options?.length > 0 && <span className="ml-1 text-sm font-medium text-gray-500">يبدأ من</span>}
                 {new Intl.NumberFormat("ar-SA", { maximumFractionDigits: 2 }).format(getProductStartingPrice(product))} ر.س
               </p>
-              <button
-                type="button"
-                onClick={() => product.options?.length ? router.push(`/products/${product.slug}`) : addItem(product)}
-                className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1D1F1F] px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#343838]"
-              >
-                {product.options?.length ? null : <ShoppingCart size={16} />}
-                {product.options?.length ? "أضف إلى السلة" : "أضف إلى السلة"}
-              </button>
+              <QuickAddButton product={product} addItem={addItem} className="mt-4 w-full" />
             </div>
           </article>
         ))}
