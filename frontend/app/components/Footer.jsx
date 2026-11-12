@@ -28,15 +28,14 @@ export default function Footer({ className = "mt-16" }) {
           <section>
             <h2 className="mb-4 text-lg font-bold">تواصل معنا</h2>
             <ul className="space-y-4 text-sm text-gray-300">
-              <li><a href="tel:+966533310314" className="flex items-center gap-3 transition-colors duration-200 hover:text-white" dir="rtl"><Phone size={17} /><span dir="ltr">0533310314</span></a></li>
-              <li><a href="mailto:sales@zemam.com.sa" className="flex items-center gap-3 transition-colors duration-200 hover:text-white" dir="rtl"><Mail size={17} /><span dir="ltr">sales@zemam.com.sa</span></a></li>
+              <li><a href="tel:+966533310314" className="inline-flex w-fit max-w-full items-center gap-3 transition-colors duration-200 hover:text-white" dir="rtl"><Phone size={17} /><span dir="ltr">+966 53 331 0314</span></a></li>
+              <li><a href="mailto:sales@zemam.com.sa" className="inline-flex w-fit max-w-full items-center gap-3 transition-colors duration-200 hover:text-white" dir="rtl"><Mail size={17} /><span dir="ltr">sales@zemam.com.sa</span></a></li>
             </ul>
           </section>
         </div>
       </div>
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-5 text-center text-sm text-gray-400 sm:flex-row sm:px-6">
+      <div className="mx-auto flex max-w-7xl items-center justify-center px-4 py-5 text-center text-sm text-gray-400 sm:px-6">
         <p className="break-words">جميع الحقوق محفوظة © <CurrentYear /> شركة زمام الجودة للدعاية والإعلان</p>
-        <Link href="/about" className="transition-colors hover:text-white">من نحن</Link>
       </div>
     </footer>
   );

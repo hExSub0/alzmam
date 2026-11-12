@@ -10,8 +10,11 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Alzmam Store",
-  description: "Alzmam Gift & Advertising Store",
+  title: {
+    default: "زمام الجودة للدعاية والإعلان",
+    template: "%s | زمام الجودة للدعاية والإعلان",
+  },
+  description: "زمام الجودة للدعاية والإعلان — حلول متكاملة للتصميم والطباعة والتسويق.",
 };
 
 export default function RootLayout({ children }) {

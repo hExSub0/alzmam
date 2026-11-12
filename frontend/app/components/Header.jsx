@@ -2,20 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, ChevronDown, Heart, LayoutDashboard, LogOut, Menu, Package, ShoppingCart, User, X } from "lucide-react";
+import { Bell, Heart, LayoutDashboard, LogOut, Menu, Package, ShoppingCart, User, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "./CartProvider";
 import { AnimatePresence, motion } from "framer-motion";
 import AuthPage from "./AuthPage";
 import { useAuth } from "./AuthProvider";
-
-const NAV_ITEMS = [
-  { label: "الدروع التذكارية", href: "#", hasDropdown: true },
-  { label: "الهدايا الخاصة وهدايا الحفر الداخلي", href: "#", hasDropdown: true },
-  { label: "كؤوس وميداليات رياضية", href: "#", hasDropdown: true },
-  { label: "هدايا مكتبية", href: "#", hasDropdown: true },
-  { label: "الهدايا الدعائية", href: "#", hasDropdown: true },
-];
+import { API_BASE_URL } from "../lib/productApi";
 
 function AccountAvatar() {
   return (
@@ -31,13 +24,22 @@ function AccountAvatar() {
 }
 
 export default function Header() {
-  const [openMenu, setOpenMenu] = useState(null);
+  const [sections, setSections] = useState([]);
   const [authMode, setAuthMode] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef(null);
   const { itemCount } = useCart();
   const { user, logout } = useAuth();
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`${API_BASE_URL}/sections`, { signal: controller.signal, cache: "no-store" })
+      .then((response) => response.ok ? response.json() : { sections: [] })
+      .then((payload) => setSections(payload.sections || []))
+      .catch((error) => { if (error.name !== "AbortError") setSections([]); });
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     if (!isAccountMenuOpen && !isMobileMenuOpen) return undefined;
@@ -84,38 +86,14 @@ export default function Header() {
 
           {/* ── القائمة بجانب اللوجو ── */}
           <nav aria-label="التنقل الرئيسي" className="hidden lg:flex items-center gap-0">
-          {NAV_ITEMS.map((item) => (
-            <div
-              key={item.label}
-              className="relative"
-              onMouseEnter={() => item.hasDropdown && setOpenMenu(item.label)}
-              onMouseLeave={() => setOpenMenu(null)}
+          {sections.map((section) => (
+            <Link
+              key={section._id}
+              href={`/products?section=${encodeURIComponent(section._id)}`}
+              className="cursor-pointer rounded-md px-3 py-2 text-sm whitespace-nowrap text-gray-700 transition-colors duration-300 hover:text-gray-950"
             >
-              <Link
-                href={item.href}
-                className={`flex items-center gap-1 px-3 py-2 text-sm whitespace-nowrap rounded-md transition-colors duration-300 ${
-                  item.highlight
-                    ? "text-red-500 font-semibold hover:text-red-600"
-                    : "text-gray-700 hover:text-gray-950"
-                }`}
-              >
-                {item.label}
-                {item.hasDropdown && (
-                  <ChevronDown
-                    size={13}
-                    className={`transition-transform duration-200 ${
-                      openMenu === item.label ? "rotate-180" : ""
-                    }`}
-                  />
-                )}
-              </Link>
-
-              {item.hasDropdown && openMenu === item.label && (
-                <div className="absolute top-full right-0 mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50">
-                  <p className="px-4 py-2 text-sm text-gray-400 text-center">قريباً...</p>
-                </div>
-              )}
-            </div>
+              {section.name}
+            </Link>
           ))}
           </nav>
         </div>
@@ -241,10 +219,9 @@ export default function Header() {
           >
             <p className="px-1 pb-2 text-xs font-semibold text-gray-400">تصفح الأقسام</p>
             <div className="divide-y divide-gray-100">
-              {NAV_ITEMS.map((item) => (
-                <Link key={item.label} href={item.href} onClick={() => setIsMobileMenuOpen(false)} className="flex min-h-12 items-center justify-between gap-3 py-3 text-sm text-gray-700 hover:text-black">
-                  <span>{item.label}</span>
-                  {item.hasDropdown && <ChevronDown size={15} className="shrink-0 text-gray-400" />}
+              {sections.map((section) => (
+                <Link key={section._id} href={`/products?section=${encodeURIComponent(section._id)}`} onClick={() => setIsMobileMenuOpen(false)} className="flex min-h-12 cursor-pointer items-center gap-3 py-3 text-sm text-gray-700 hover:text-black">
+                  <span>{section.name}</span>
                 </Link>
               ))}
             </div>
