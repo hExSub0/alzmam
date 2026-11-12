@@ -74,7 +74,7 @@ export default function TopHeader() {
       <div className="h-12 w-full bg-[#1D1F1F] text-gray-300">
         <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-4">
           <div className="hidden shrink-0 items-center gap-4 text-sm md:flex">
-            <a href="#" className="text-gray-200 transition-colors hover:text-white">من نحن</a>
+            <Link href="/about" className="text-gray-200 transition-colors hover:text-white">{"\u0645\u0646 \u0646\u062d\u0646"}</Link>
             <span aria-hidden="true" className="h-4 w-px bg-white/15" />
             <a href="#" className="text-gray-200 transition-colors hover:text-white">سياسة الخصوصية</a>
             <span aria-hidden="true" className="h-4 w-px bg-white/15" />
@@ -88,8 +88,8 @@ export default function TopHeader() {
             </span>
           </button>
 
-          <a href="mailto:alzmam@alzmam-adv.com" dir="ltr" className="hidden shrink-0 text-xs text-gray-200 transition-colors hover:text-white lg:block">
-            alzmam@alzmam-adv.com
+          <a href="mailto:sales@zemam.com.sa" dir="ltr" className="hidden shrink-0 text-xs text-gray-200 transition-colors hover:text-white lg:block">
+            sales@zemam.com.sa
           </a>
         </div>
       </div>
