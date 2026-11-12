@@ -527,7 +527,7 @@ export default function AdminDashboard() {
               <Boxes size={22} strokeWidth={1.7} />
             </span>
             <span>
-              <span className="block text-base font-bold tracking-wide">الزمام</span>
+              <span className="block text-base font-bold tracking-wide">زمام الجودة</span>
               <span className="mt-0.5 block text-xs text-white/55">إدارة المتجر</span>
             </span>
           </Link>

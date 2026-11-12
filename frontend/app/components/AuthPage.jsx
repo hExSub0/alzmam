@@ -332,8 +332,8 @@ export default function AuthPage({ mode, modal = false, onClose, onModeChange, o
   const pageTitle = isVerificationStep
     ? "تأكيد البريد الإلكتروني"
     : isRegister
-      ? "أنشئ حسابك في الزمام"
-      : "مرحبًا بعودتك إلى الزمام";
+      ? "أنشئ حسابك في زمام الجودة"
+      : "مرحبًا بعودتك إلى زمام الجودة";
   const pageDescription = isVerificationStep
     ? "تحقق من بريدك الإلكتروني للمتابعة."
     : isRegister

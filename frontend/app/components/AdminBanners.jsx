@@ -5,9 +5,9 @@ import { ImagePlus, LoaderCircle, Save, Trash2 } from "lucide-react";
 import { useAuth } from "./AuthProvider";
 
 const initialBanners = [
-  { src: "/images/banner-1.webp", alt: "دروع وهدايا الزمام" },
-  { src: "/images/banner-2.webp", alt: "هدايا دعائية من الزمام" },
-  { src: "/images/banner-3.webp", alt: "منتجات الزمام" },
+  { src: "/images/banner-1.webp", alt: "دروع وهدايا زمام الجودة" },
+  { src: "/images/banner-2.webp", alt: "هدايا دعائية من زمام الجودة" },
+  { src: "/images/banner-3.webp", alt: "منتجات زمام الجودة" },
 ];
 const fieldClass = "mt-2 h-11 w-full rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-gray-500";
 

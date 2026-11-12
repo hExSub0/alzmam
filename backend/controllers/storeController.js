@@ -2,9 +2,9 @@ const StoreSettings = require("../models/StoreSettings");
 const AppError = require("../utils/AppError");
 
 const DEFAULT_BANNERS = [
-  { src: "/images/banner-1.webp", alt: "دروع وهدايا الزمام" },
-  { src: "/images/banner-2.webp", alt: "هدايا دعائية من الزمام" },
-  { src: "/images/banner-3.webp", alt: "منتجات الزمام" },
+  { src: "/images/banner-1.webp", alt: "دروع وهدايا زمام الجودة" },
+  { src: "/images/banner-2.webp", alt: "هدايا دعائية من زمام الجودة" },
+  { src: "/images/banner-3.webp", alt: "منتجات زمام الجودة" },
 ];
 
 const getBanners = async (_req, res) => {

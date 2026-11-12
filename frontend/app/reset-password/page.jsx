@@ -4,7 +4,7 @@ import Header from "../components/Header";
 import PasswordRecoveryForm from "../components/PasswordRecoveryForm";
 import TopHeader from "../components/TopHeader";
 
-export const metadata = { title: "إعادة تعيين كلمة المرور | الزمام" };
+export const metadata = { title: "إعادة تعيين كلمة المرور | زمام الجودة" };
 
 async function ResetPasswordPageContent({ searchParams }) {
   const params = await searchParams;

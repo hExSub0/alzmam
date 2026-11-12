@@ -4,7 +4,7 @@ import TopHeader from "../components/TopHeader";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
-export const metadata = { title: "تسجيل الدخول | الزمام" };
+export const metadata = { title: "تسجيل الدخول | زمام الجودة" };
 
 async function LoginPageContent({ searchParams }) {
   const params = await searchParams;
