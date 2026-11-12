@@ -154,7 +154,7 @@ export default function ProductsPageClient({ initialSectionSlug = "" }) {
               </button>
               {visibleSections.map((section) => (
                 <button key={section._id} type="button" onClick={() => selectSection(section)} aria-pressed={selectedSectionSlug === section.slug || selectedSectionSlug === String(section._id)} className={`flex min-h-9 w-full cursor-pointer items-center justify-between gap-3 rounded-md px-2 text-right text-sm transition hover:bg-gray-50 ${selectedSectionSlug === section.slug || selectedSectionSlug === String(section._id) ? "font-semibold text-[#8e703e]" : "text-gray-600"}`}>
-                  <span className="flex min-w-0 items-center gap-2"><span className={`h-4 w-4 shrink-0 rounded border ${selectedSectionSlug === section.slug || selectedSectionSlug === String(section._id) ? "border-[#ad8b52] bg-[#ad8b52]" : "border-gray-300"}`} /> <span className="truncate">{section.name}</span></span>
+                  <span className="flex min-w-0 items-center gap-2"><span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${selectedSectionSlug === section.slug || selectedSectionSlug === String(section._id) ? "border-[#ad8b52] bg-[#ad8b52]" : "border-gray-300"}`}>{(selectedSectionSlug === section.slug || selectedSectionSlug === String(section._id)) && <Check size={12} strokeWidth={3} className="text-white" />}</span><span className="truncate">{section.name}</span></span>
                   <span className="shrink-0 text-xs text-gray-400">{sectionCounts.get(String(section._id)) || 0}</span>
                 </button>
               ))}
