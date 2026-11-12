@@ -71,26 +71,23 @@ export default function TopHeader() {
 
   return (
     <>
-      <div className="h-12 w-full bg-[#1D1F1F] text-gray-300">
-        <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-4">
-          <div className="hidden shrink-0 items-center gap-4 text-sm md:flex">
+      <div className="min-h-12 w-full bg-[#1D1F1F] text-gray-300">
+        <div className="mx-auto flex min-h-12 w-full max-w-7xl flex-col items-stretch justify-center gap-2 px-3 py-2 sm:px-4 md:flex-row md:items-center md:justify-between md:gap-4 md:py-0">
+          <nav aria-label="روابط الموقع" className="order-2 flex w-full items-center justify-center gap-4 overflow-x-auto border-t border-white/10 pt-2 text-[11px] whitespace-nowrap md:order-1 md:w-auto md:shrink-0 md:justify-start md:gap-4 md:overflow-visible md:border-0 md:pt-0 md:text-sm">
             <Link href="/about" className="text-gray-200 transition-colors hover:text-white">{"\u0645\u0646 \u0646\u062d\u0646"}</Link>
             <span aria-hidden="true" className="h-4 w-px bg-white/15" />
             <a href="#" className="text-gray-200 transition-colors hover:text-white">سياسة الخصوصية</a>
             <span aria-hidden="true" className="h-4 w-px bg-white/15" />
             <a href="#" className="text-gray-200 transition-colors hover:text-white">الشروط والأحكام</a>
-          </div>
+          </nav>
 
-          <button type="button" onClick={() => setIsSearchOpen(true)} className="min-w-0 flex-1 text-right sm:max-w-72 md:max-w-80">
+          <button type="button" onClick={() => setIsSearchOpen(true)} className="order-1 min-w-0 w-[82%] max-w-2xl self-center text-right md:order-2 md:flex-1 md:w-auto md:max-w-[760px]">
             <span className="relative flex items-center">
               <Search size={14} className="pointer-events-none absolute right-3 top-1/2 z-10 -translate-y-1/2 text-gray-400" />
               <span dir="rtl" className="flex h-9 w-full items-center rounded-full bg-[#303232] pr-[35px] pl-3 text-xs text-gray-400 transition-colors hover:bg-[#3a3c3c]">{searchQuery || "ابحث"}</span>
             </span>
           </button>
 
-          <a href="mailto:sales@zemam.com.sa" dir="ltr" className="hidden shrink-0 text-xs text-gray-200 transition-colors hover:text-white lg:block">
-            sales@zemam.com.sa
-          </a>
         </div>
       </div>
 
