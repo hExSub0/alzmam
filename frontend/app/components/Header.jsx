@@ -89,7 +89,7 @@ export default function Header() {
           {sections.map((section) => (
             <Link
               key={section._id}
-              href={`/products?section=${encodeURIComponent(section._id)}`}
+              href={`/products?section=${encodeURIComponent(section.slug || section._id)}`}
               className="cursor-pointer rounded-md px-3 py-2 text-sm whitespace-nowrap text-gray-700 transition-colors duration-300 hover:text-gray-950"
             >
               {section.name}
@@ -220,7 +220,7 @@ export default function Header() {
             <p className="px-1 pb-2 text-xs font-semibold text-gray-400">تصفح الأقسام</p>
             <div className="divide-y divide-gray-100">
               {sections.map((section) => (
-                <Link key={section._id} href={`/products?section=${encodeURIComponent(section._id)}`} onClick={() => setIsMobileMenuOpen(false)} className="flex min-h-12 cursor-pointer items-center gap-3 py-3 text-sm text-gray-700 hover:text-black">
+                <Link key={section._id} href={`/products?section=${encodeURIComponent(section.slug || section._id)}`} onClick={() => setIsMobileMenuOpen(false)} className="flex min-h-12 cursor-pointer items-center gap-3 py-3 text-sm text-gray-700 hover:text-black">
                   <span>{section.name}</span>
                 </Link>
               ))}
