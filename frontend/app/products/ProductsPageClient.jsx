@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Heart, Search, SlidersHorizontal } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Check, ChevronDown, Heart, Search, SlidersHorizontal } from "lucide-react";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
 import TopHeader from "../components/TopHeader";
@@ -20,6 +21,13 @@ const normalizeText = (value) => String(value || "")
   .replace(/ى/g, "ي")
   .toLocaleLowerCase("ar");
 
+const sortOptions = [
+  { value: "recommended", label: "مقترحاتنا" },
+  { value: "price-asc", label: "السعر: الأقل أولاً" },
+  { value: "price-desc", label: "السعر: الأعلى أولاً" },
+  { value: "name", label: "الاسم" },
+];
+
 export default function ProductsPageClient({ initialSectionSlug = "" }) {
   const router = useRouter();
   const [allProducts, setAllProducts] = useState([]);
@@ -30,10 +38,28 @@ export default function ProductsPageClient({ initialSectionSlug = "" }) {
   const [categorySearch, setCategorySearch] = useState("");
   const [productSearch, setProductSearch] = useState("");
   const [sortOrder, setSortOrder] = useState("recommended");
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  const sortMenuRef = useRef(null);
   const [showAllSections, setShowAllSections] = useState(false);
   const { user } = useAuth();
   const { addItem } = useCart();
   const { favoriteIds, pendingProductIds, toggleFavorite } = useFavorites();
+
+  useEffect(() => {
+    if (!isSortOpen) return undefined;
+    const closeOnOutsideClick = (event) => {
+      if (!sortMenuRef.current?.contains(event.target)) setIsSortOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setIsSortOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isSortOpen]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -153,15 +179,27 @@ export default function ProductsPageClient({ initialSectionSlug = "" }) {
                   <Search size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input value={productSearch} onChange={(event) => setProductSearch(event.target.value)} placeholder="ابحث في المنتجات" className="h-10 w-full rounded-lg border border-gray-200 bg-white pr-9 pl-3 text-sm outline-none transition focus:border-[#b69a68]" />
                 </label>
-                <label className="flex items-center gap-2 text-sm text-gray-500">
+                <div className="flex items-center gap-2 text-sm text-gray-500">
                   <span className="shrink-0">ترتيب حسب</span>
-                  <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} className="h-10 min-w-36 cursor-pointer rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:border-[#b69a68]">
-                    <option value="recommended">مقترحاتنا</option>
-                    <option value="price-asc">السعر: الأقل أولاً</option>
-                    <option value="price-desc">السعر: الأعلى أولاً</option>
-                    <option value="name">الاسم</option>
-                  </select>
-                </label>
+                  <div ref={sortMenuRef} className="relative min-w-40">
+                    <button type="button" aria-haspopup="listbox" aria-expanded={isSortOpen} onClick={() => setIsSortOpen((open) => !open)} className="flex h-10 w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 text-right text-sm text-gray-700 transition hover:border-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b69a68]/30">
+                      <span>{sortOptions.find((option) => option.value === sortOrder)?.label}</span>
+                      <ChevronDown size={16} className={`shrink-0 text-gray-500 transition-transform duration-200 ${isSortOpen ? "rotate-180" : ""}`} />
+                    </button>
+                    <AnimatePresence>
+                      {isSortOpen && (
+                        <motion.div role="listbox" aria-label="خيارات الترتيب" initial={{ opacity: 0, y: -5, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -4, scale: 0.98 }} transition={{ duration: 0.16, ease: "easeOut" }} className="absolute left-0 top-full z-30 mt-2 w-full origin-top-left overflow-hidden rounded-lg border border-gray-200 bg-white p-1.5 shadow-lg">
+                          {sortOptions.map((option) => (
+                            <button key={option.value} type="button" role="option" aria-selected={sortOrder === option.value} onClick={() => { setSortOrder(option.value); setIsSortOpen(false); }} className={`flex min-h-10 w-full cursor-pointer items-center justify-between gap-3 rounded-md px-3 text-right text-sm transition-colors hover:bg-gray-50 ${sortOrder === option.value ? "font-semibold text-[#8e703e]" : "text-gray-700"}`}>
+                              {option.label}
+                              {sortOrder === option.value && <Check size={15} />}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
               </div>
             </div>
 
