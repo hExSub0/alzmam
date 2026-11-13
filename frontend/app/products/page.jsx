@@ -13,7 +13,7 @@ export async function generateMetadata({ searchParams }) {
     if (!response.ok) throw new Error("Could not load sections");
     const payload = await response.json();
     const section = (payload.sections || []).find((item) => item.slug === sectionSlug || String(item._id) === sectionSlug);
-    return { title: section?.name || "القسم غير موجود" };
+    return { title: section?.name || "قسم غير موجود" };
   } catch {
     return { title: "المنتجات" };
   }

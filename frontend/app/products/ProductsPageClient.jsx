@@ -87,6 +87,12 @@ export default function ProductsPageClient({ initialSectionSlug = "" }) {
   }, []);
 
   const selectedSection = sections.find((section) => section.slug === selectedSectionSlug || String(section._id) === selectedSectionSlug);
+
+  useEffect(() => {
+    const pageTitle = selectedSection?.name || "جميع المنتجات";
+    document.title = `${pageTitle} | زمام الجودة للدعاية والإعلان`;
+  }, [selectedSection?.name]);
+
   const sectionCounts = useMemo(() => {
     const counts = new Map();
     for (const product of allProducts) {
